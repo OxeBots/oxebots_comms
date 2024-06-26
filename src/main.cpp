@@ -1,5 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
-#include "./headers/comms_node.hpp"
+#include "../include/oxebots_comms/comms_node.hpp"
 
 int main(int argc, char * argv[])
 {

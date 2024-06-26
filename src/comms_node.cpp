@@ -1,4 +1,4 @@
-#include "./headers/comms_node.hpp"
+#include "../include/oxebots_comms/comms_node.hpp"
 
 CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
 {
