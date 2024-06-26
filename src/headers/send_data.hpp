@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-#include "../proto/robot_control.pb.h"
+#include "ssl_simulation_robot_control.pb.h"
 
 class SendData
 {

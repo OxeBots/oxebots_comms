@@ -9,11 +9,11 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
     this->declare_parameter("topic_retention", 10);
     this->declare_parameter("robot_amount", 3);
 
-    RCLCPP_INFO(this->get_logger(), "Creating SendData object");
+    RCLCPP_DEBUG(this->get_logger(), "Creating SendData object");
     this->send_data = new SendData(this->get_parameter("host").as_string(),
                                    this->get_parameter("port").as_string());
 
-    RCLCPP_INFO(this->get_logger(), "Creating robot command list");
+    RCLCPP_DEBUG(this->get_logger(), "Creating robot command list");
     this->robot_list_size = this->get_parameter("robot_amount").as_int();
     this->robot_command_list =
       std::vector<RobotCommand *>(this->robot_list_size, nullptr);
@@ -21,7 +21,7 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
     this->count = 0;
 
     std::string topic = this->get_parameter("topic").as_string();
-    RCLCPP_INFO(this->get_logger(), "Creating subscription to %s",
+    RCLCPP_DEBUG(this->get_logger(), "Creating subscription to %s",
                  topic.c_str());
     this->subscription =
       this->create_subscription<oxebots_interfaces::msg::SendData>(

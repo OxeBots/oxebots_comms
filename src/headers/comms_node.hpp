@@ -1,9 +1,9 @@
 #pragma once
 #include <rclcpp/rclcpp.hpp>
 
-#include "../proto/robot_control.pb.h"
 #include "./send_data.hpp"
 #include "oxebots_interfaces/msg/send_data.hpp"
+#include "ssl_simulation_robot_control.pb.h"
 
 class CommsNode : public rclcpp::Node
 {

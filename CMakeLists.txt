@@ -11,10 +11,6 @@ find_package(rclcpp REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(oxebots_interfaces REQUIRED)
 
-set(PROTO_FILES
-  proto/robot_control.proto
-)
-
 include_directories(
   ${Protobuf_INCLUDE_DIRS}
   ${CMAKE_CURRENT_BINARY_DIR}
