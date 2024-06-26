@@ -8,6 +8,17 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(Protobuf REQUIRED)
+find_package(oxebots_interfaces REQUIRED)
+
+set(PROTO_FILES
+  proto/robot_control.proto
+)
+
+include_directories(
+  ${Protobuf_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -20,5 +31,21 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+add_executable(
+  comms_node
+  src/main.cpp
+  src/comms_node.cpp
+  src/send_data.cpp
+  ${PROTO_SRCS}
+)
+
+ament_target_dependencies(comms_node rclcpp oxebots_interfaces)
+target_link_libraries(comms_node ${Protobuf_LIBRARIES})
+
+install(TARGETS
+  comms_node
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 ament_package()
