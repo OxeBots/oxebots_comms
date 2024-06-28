@@ -13,7 +13,7 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
     robot_list_size = get_parameter("robot_amount").as_int();
     proto_command_list.resize(robot_list_size);
 
-    RCLCPP_DEBUG(this->get_logger(), "Creating RobotDataSender");
+    RCLCPP_DEBUG(get_logger(), "Creating RobotDataSender");
 
     data_sender = new RobotDataSender(get_parameter("host").as_string(),
                                       get_parameter("port").as_string());

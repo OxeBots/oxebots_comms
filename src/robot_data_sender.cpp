@@ -22,13 +22,13 @@ RobotDataSender::RobotDataSender(std::string host, std::string port)
         exit(EXIT_FAILURE);
     }
 
-    this->socket_fd = socket_fd;
-    this->host = host;
-    this->port = port;
-    this->server_address = server_addr;
+    socket_fd = socket_fd;
+    host = host;
+    port = port;
+    server_address = server_addr;
 }
 
-RobotDataSender::~RobotDataSender() { close(this->socket_fd); }
+RobotDataSender::~RobotDataSender() { close(socket_fd); }
 
 void RobotDataSender::SendControl(RobotControl control)
 {
@@ -38,7 +38,7 @@ void RobotDataSender::SendControl(RobotControl control)
         exit(EXIT_FAILURE);
     }
 
-    if (send(this->socket_fd, data_pkt.c_str(), data_pkt.size(), 0) < 0)
+    if (send(socket_fd, data_pkt.c_str(), data_pkt.size(), 0) < 0)
     {
         exit(EXIT_FAILURE);
     }
