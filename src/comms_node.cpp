@@ -33,7 +33,7 @@ void CommsNode::HandleCmd(
   const oxebots_interfaces::msg::RobotCmd::SharedPtr msg)
 {
     oxebots_interfaces::msg::RobotData robot_command_list[] = {
-      msg->robot1, msg->robot2, msg->robot3};
+      msg->keeper, msg->field1, msg->field2};
     RobotControl * robot_control = new RobotControl();
     for (auto robot_command_data : robot_command_list)
     {
