@@ -13,12 +13,10 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
     robot_list_size = get_parameter("robot_amount").as_int();
     proto_command_list.resize(robot_list_size);
 
-    RCLCPP_DEBUG(this->get_logger(), "Creating RobotDataSender");
+    RCLCPP_DEBUG(get_logger(), "Creating RobotDataSender");
 
     data_sender = new RobotDataSender(get_parameter("host").as_string(),
                                       get_parameter("port").as_string());
-
-    count = 0;
 
     std::string topic = get_parameter("topic").as_string();
 
@@ -32,43 +30,26 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
 void CommsNode::HandleCmd(
   const oxebots_interfaces::msg::RobotCmd::SharedPtr msg)
 {
-    int real_id = msg->id - 1;
-    if (real_id >= robot_list_size || real_id < 0)
+    RobotControl robot_control;
+
+    for (const auto & robot_command_data : msg->robots)
     {
-        RCLCPP_ERROR(get_logger(), "Robot ID out of bounds");
-        return;
+        RobotCommand robot_command;
+        MoveWheelVelocity move_wheel_velocity;
+        RobotMoveCommand robot_move_command;
+
+        robot_command.set_id(robot_command_data.id);
+        robot_command.set_kick_speed(robot_command_data.kick);
+        move_wheel_velocity.set_front_left(robot_command_data.front_left);
+        move_wheel_velocity.set_front_right(robot_command_data.front_right);
+        move_wheel_velocity.set_back_left(robot_command_data.back_left);
+        move_wheel_velocity.set_back_right(robot_command_data.back_right);
+
+        robot_move_command.set_allocated_wheel_velocity(&move_wheel_velocity);
+        robot_command.set_allocated_move_command(&robot_move_command);
+
+        robot_control.add_robot_commands()->CopyFrom(robot_command);
     }
 
-    auto & command = proto_command_list[real_id];
-
-    if (command.id() == 0)  // Assuming 0 means uninitialized
-    {
-        RCLCPP_DEBUG(get_logger(), "New command for robot %d", msg->id);
-        count++;
-    }
-
-    auto * move_wheel_velocity =
-      command.mutable_move_command()->mutable_wheel_velocity();
-    move_wheel_velocity->set_front_left(msg->front_left);
-    move_wheel_velocity->set_front_right(msg->front_right);
-    move_wheel_velocity->set_back_left(msg->back_left);
-    move_wheel_velocity->set_back_right(msg->back_right);
-
-    command.set_id(msg->id);
-    command.set_kick_speed(msg->kick);
-
-    if (count == robot_list_size)
-    {
-        RCLCPP_DEBUG(get_logger(), "Sending control to robots");
-        RobotControl control;
-        for (auto & cmd : proto_command_list)
-        {
-            control.add_robot_commands()->CopyFrom(cmd);
-            cmd.Clear();
-        }
-
-        data_sender->SendControl(control);
-
-        count = 0;
-    }
+    data_sender->SendControl(robot_control);
 }
