@@ -15,8 +15,6 @@ class CommsNode : public rclcpp::Node
     std::vector<RobotCommand> proto_command_list;
     int robot_list_size;
 
-    int count;
-
     rclcpp::Subscription<oxebots_interfaces::msg::RobotCmd>::SharedPtr cmd_sub;
 
     void HandleCmd(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg);
