@@ -11,7 +11,7 @@
 
 #include "ssl_simulation_robot_control.pb.h"
 
-class SendData
+class RobotDataSender
 {
    private:
     int socket_fd;
@@ -20,7 +20,7 @@ class SendData
     std::string port;
 
    public:
-    SendData(std::string host, std::string port);
-    ~SendData();
+    RobotDataSender(std::string host, std::string port);
+    ~RobotDataSender();
     void SendControl(RobotControl control);
 };
