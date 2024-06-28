@@ -9,10 +9,7 @@ class CommsNode : public rclcpp::Node
 {
    private:
     SendData * send_data;
-    std::vector<RobotCommand *> robot_command_list;
     int robot_list_size;
-
-    int count;
 
     rclcpp::Subscription<oxebots_interfaces::msg::SendData>::SharedPtr
       subscription;

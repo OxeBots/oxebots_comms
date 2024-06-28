@@ -15,10 +15,6 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
 
     RCLCPP_DEBUG(this->get_logger(), "Creating robot command list");
     this->robot_list_size = this->get_parameter("robot_amount").as_int();
-    this->robot_command_list =
-      std::vector<RobotCommand *>(this->robot_list_size, nullptr);
-
-    this->count = 0;
 
     std::string topic = this->get_parameter("topic").as_string();
     RCLCPP_DEBUG(this->get_logger(), "Creating subscription to %s",
@@ -35,55 +31,26 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
 void CommsNode::HandleSubscription(
   const oxebots_interfaces::msg::SendData::SharedPtr msg)
 {
-    int real_id = msg->id - 1;
-    if (real_id >= this->robot_list_size || real_id < 0)
+    oxebots_interfaces::msg::RobotData robot_command_list[] = {
+      msg->robot1, msg->robot2, msg->robot3};
+    RobotControl * robot_control = new RobotControl();
+    for (int i = 0; i < this->robot_list_size; i++)
     {
-        RCLCPP_ERROR(this->get_logger(), "Robot ID out of bounds");
-        return;
+        RobotCommand * robot_command = new RobotCommand();
+        robot_command->set_id(robot_command_list[i].id);
+        robot_command->set_kick_speed(robot_command_list[i].kick);
+
+        MoveWheelVelocity * move_wheel_velocity = new MoveWheelVelocity();
+        move_wheel_velocity->set_front_left(robot_command_list[i].front_left);
+        move_wheel_velocity->set_front_right(
+          robot_command_list[i].front_right);
+        move_wheel_velocity->set_back_left(robot_command_list[i].back_left);
+        move_wheel_velocity->set_back_right(robot_command_list[i].back_right);
+        RobotMoveCommand * robot_move_command = new RobotMoveCommand();
+        robot_move_command->set_allocated_wheel_velocity(move_wheel_velocity);
+        robot_command->set_allocated_move_command(robot_move_command);
+        robot_control->add_robot_commands()->CopyFrom(*robot_command);
     }
 
-    // This is a new command
-    if (!this->robot_command_list[real_id])
-    {
-        RCLCPP_DEBUG(this->get_logger(), "New command for robot %d", msg->id);
-        this->count++;
-    }
-
-    MoveWheelVelocity * move_wheel_velocity = new MoveWheelVelocity();
-    RobotMoveCommand * move_command = new RobotMoveCommand();
-    move_command->set_allocated_wheel_velocity(move_wheel_velocity);
-    move_wheel_velocity->set_front_left(msg->front_left);
-    move_wheel_velocity->set_front_right(msg->front_right);
-    move_wheel_velocity->set_back_left(msg->back_left);
-    move_wheel_velocity->set_back_right(msg->back_right);
-
-    RobotCommand * command = new RobotCommand();
-    command->set_id(msg->id);
-    command->set_kick_speed(msg->kick);
-
-    command->set_allocated_move_command(move_command);
-
-    this->robot_command_list[real_id] = command;
-
-    if (this->count == this->robot_list_size)
-    {
-        RCLCPP_DEBUG(this->get_logger(), "Sending control to robots");
-        RobotControl * control = new RobotControl();
-        for (int i = 0; i < this->robot_list_size; i++)
-        {
-            control->add_robot_commands()->CopyFrom(
-              *this->robot_command_list[i]);
-
-            delete this->robot_command_list[i]->release_move_command()->release_wheel_velocity();
-            delete this->robot_command_list[i]->release_move_command();
-            delete this->robot_command_list[i];
-
-            this->robot_command_list[i] = nullptr;
-        }
-
-        this->send_data->SendControl(*control);
-        delete control;
-
-        this->count = 0;
-    }
+    this->send_data->SendControl(*robot_control);
 }
