@@ -1,6 +1,6 @@
-#include "../include/oxebots_comms/send_data.hpp"
+#include "oxebots_comms/robot_data_sender.hpp"
 
-SendData::SendData(std::string host, std::string port)
+RobotDataSender::RobotDataSender(std::string host, std::string port)
 {
     int socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (socket_fd < 0)
@@ -28,17 +28,17 @@ SendData::SendData(std::string host, std::string port)
     this->server_address = server_addr;
 }
 
-SendData::~SendData() { close(this->socket_fd); }
+RobotDataSender::~RobotDataSender() { close(this->socket_fd); }
 
-void SendData::SendControl(RobotControl control)
+void RobotDataSender::SendControl(RobotControl control)
 {
-    std::string control_str;
-    if (!control.SerializeToString(&control_str))
+    std::string data_pkt;
+    if (!control.SerializeToString(&data_pkt))
     {
         exit(EXIT_FAILURE);
     }
 
-    if (send(this->socket_fd, control_str.c_str(), control_str.size(), 0) < 0)
+    if (send(this->socket_fd, data_pkt.c_str(), data_pkt.size(), 0) < 0)
     {
         exit(EXIT_FAILURE);
     }

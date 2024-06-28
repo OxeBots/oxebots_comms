@@ -12,8 +12,30 @@ find_package(Protobuf REQUIRED)
 find_package(oxebots_interfaces REQUIRED)
 
 include_directories(
+  include
   ${Protobuf_INCLUDE_DIRS}
   ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+add_executable(
+  comms_node
+  src/main.cpp
+  src/comms_node.cpp
+  src/robot_data_sender.cpp
+  ${PROTO_SRCS}
+)
+
+ament_target_dependencies(comms_node rclcpp oxebots_interfaces)
+target_link_libraries(comms_node ${Protobuf_LIBRARIES})
+
+install(TARGETS
+  comms_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  DIRECTORY include/
+  DESTINATION include
 )
 
 if(BUILD_TESTING)
@@ -27,21 +49,5 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
-
-add_executable(
-  comms_node
-  src/main.cpp
-  src/comms_node.cpp
-  src/send_data.cpp
-  ${PROTO_SRCS}
-)
-
-ament_target_dependencies(comms_node rclcpp oxebots_interfaces)
-target_link_libraries(comms_node ${Protobuf_LIBRARIES})
-
-install(TARGETS
-  comms_node
-  DESTINATION lib/${PROJECT_NAME}
-)
 
 ament_package()
