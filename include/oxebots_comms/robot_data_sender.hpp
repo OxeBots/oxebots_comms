@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-#include "ssl_simulation_robot_control.pb.h"
+#include "oxebots_interfaces/ssl_simulation_robot_control.pb.h"
 
 class RobotDataSender
 {

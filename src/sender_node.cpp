@@ -1,4 +1,12 @@
-#include "oxebots_comms/comms_node.hpp"
+#include "oxebots_comms/sender_node.hpp"
+
+int main(int argc, char * argv[])
+{
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<CommsNode>());
+    rclcpp::shutdown();
+    return 0;
+}
 
 CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
 {

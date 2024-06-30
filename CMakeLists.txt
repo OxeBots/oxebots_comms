@@ -22,18 +22,26 @@ include_directories(
 )
 
 add_executable(
-  comms_node
-  src/main.cpp
-  src/comms_node.cpp
+  sender_node
+  src/sender_node.cpp
   src/robot_data_sender.cpp
   ${PROTO_SRCS}
 )
 
-ament_target_dependencies(comms_node rclcpp oxebots_interfaces)
-target_link_libraries(comms_node ${Protobuf_LIBRARIES})
+ament_target_dependencies(sender_node rclcpp oxebots_interfaces)
+target_link_libraries(sender_node ${Protobuf_LIBRARIES})
+
+add_executable(
+  game_receiver_node
+  src/game_receiver_node.cpp
+)
+
+ament_target_dependencies(game_receiver_node rclcpp oxebots_interfaces)
+target_link_libraries(game_receiver_node ${Protobuf_LIBRARIES})
 
 install(TARGETS
-  comms_node
+  sender_node
+  game_receiver_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
