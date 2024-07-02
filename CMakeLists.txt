@@ -14,6 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(oxebots_interfaces REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system)
 
 include_directories(
   include
@@ -36,7 +37,7 @@ add_executable(
   src/game_receiver_node.cpp
 )
 
-ament_target_dependencies(game_receiver_node rclcpp oxebots_interfaces)
+ament_target_dependencies(game_receiver_node rclcpp oxebots_interfaces Boost)
 target_link_libraries(game_receiver_node ${Protobuf_LIBRARIES})
 
 install(TARGETS

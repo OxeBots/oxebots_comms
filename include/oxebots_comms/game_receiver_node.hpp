@@ -1,10 +1,10 @@
 #pragma once
+#include <boost/asio.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include <string>
+#include <thread>
 #include <vector>
 
-#include "data_receiver.hpp"
 #include "oxebots_interfaces/msg/ball_position.hpp"
 #include "oxebots_interfaces/msg/robot_game_data.hpp"
 #include "oxebots_interfaces/msg/robot_position.hpp"
@@ -19,7 +19,9 @@ class GameReceiverNode : public rclcpp::Node
     rclcpp::Publisher<oxebots_interfaces::msg::BallPosition>::SharedPtr
       ball_publisher;
 
-    DataReceiver<SSL_WrapperPacket> * game_receiver;
+    std::thread udp_thread;
+    boost::asio::io_service io_service;
+    boost::asio::ip::udp::socket socket;
 
     void PublishData(
       std::vector<oxebots_interfaces::msg::RobotGameData> allies,
@@ -30,4 +32,6 @@ class GameReceiverNode : public rclcpp::Node
 
    public:
     GameReceiverNode();
+
+    ~GameReceiverNode();
 };
