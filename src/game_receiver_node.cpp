@@ -19,7 +19,6 @@ GameReceiverNode::GameReceiverNode()
     declare_parameter("ball_topic", "ball_data");
     declare_parameter("topic_retention", 10);
     declare_parameter("robot_amount", 3);
-    declare_parameter("timer_interval", 16);
     declare_parameter("is_yellow_team", false);
 
     RCLCPP_DEBUG(get_logger(), "Creating RobotDataPublisher");
