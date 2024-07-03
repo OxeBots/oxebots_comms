@@ -13,7 +13,7 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
     RCLCPP_INFO(get_logger(), "Starting comms module...");
 
     declare_parameter("host", "127.0.0.1");
-    declare_parameter("port", "8001");
+    declare_parameter("port", 8001);
     declare_parameter("topic", "send_comms");
     declare_parameter("topic_retention", 10);
     declare_parameter("robot_amount", 3);
@@ -24,7 +24,7 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
     RCLCPP_DEBUG(get_logger(), "Creating RobotDataSender");
 
     data_sender = new RobotDataSender(get_parameter("host").as_string(),
-                                      get_parameter("port").as_string());
+                                      get_parameter("port").as_int());
 
     std::string topic = get_parameter("topic").as_string();
 

@@ -1,6 +1,6 @@
 #include "oxebots_comms/robot_data_sender.hpp"
 
-RobotDataSender::RobotDataSender(std::string host, std::string port)
+RobotDataSender::RobotDataSender(std::string host, int port)
 {
     int socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (socket_fd < 0)
@@ -10,7 +10,7 @@ RobotDataSender::RobotDataSender(std::string host, std::string port)
 
     struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(atoi(port.c_str()));
+    server_addr.sin_port = htons(port);
     if (inet_pton(AF_INET, host.c_str(), &server_addr.sin_addr) <= 0)
     {
         exit(EXIT_FAILURE);
