@@ -23,6 +23,9 @@ class GameReceiverNode : public rclcpp::Node,
     rclcpp::Publisher<oxebots_interfaces::msg::BallPosition>::SharedPtr
       ball_publisher;
 
+    boost::asio::io_context & io_context;
+    std::thread io_thread;
+
     bool is_yellow_team;
 
     void StartReceive();
@@ -36,8 +39,9 @@ class GameReceiverNode : public rclcpp::Node,
     void on_receive(const SSL_WrapperPacket & packet) override;
 
    private:
-    void PublishData(
+    void PublishRobotData(
       std::vector<oxebots_interfaces::msg::RobotGameData> allies,
-      std::vector<oxebots_interfaces::msg::RobotGameData> enemies,
-      oxebots_interfaces::msg::BallPosition ball_data);
+      std::vector<oxebots_interfaces::msg::RobotGameData> enemies);
+
+    void PublishBallData(oxebots_interfaces::msg::BallPosition ball_data);
 };
