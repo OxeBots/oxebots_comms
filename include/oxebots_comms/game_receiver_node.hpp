@@ -1,8 +1,8 @@
 #pragma once
 #include <boost/asio.hpp>
+#include <boost/bind/bind.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include <thread>
 #include <vector>
 
 #include "oxebots_interfaces/msg/ball_position.hpp"
@@ -10,7 +10,6 @@
 #include "oxebots_interfaces/msg/robot_position.hpp"
 #include "oxebots_interfaces/ssl_vision_detection.pb.h"
 #include "oxebots_interfaces/ssl_vision_wrapper.pb.h"
-
 class GameReceiverNode : public rclcpp::Node
 {
    private:
@@ -19,16 +18,21 @@ class GameReceiverNode : public rclcpp::Node
     rclcpp::Publisher<oxebots_interfaces::msg::BallPosition>::SharedPtr
       ball_publisher;
 
-    std::thread udp_thread;
     boost::asio::io_service io_service;
     boost::asio::ip::udp::socket socket;
+    std::array<char, 1024> recv_buffer;
+    boost::asio::ip::udp::endpoint endpoint;
 
-    void PublishData(
+    void PublishRobotData(
       std::vector<oxebots_interfaces::msg::RobotGameData> allies,
-      std::vector<oxebots_interfaces::msg::RobotGameData> enemies,
-      oxebots_interfaces::msg::BallPosition ball_data);
-    void GetDetectionData();
+      std::vector<oxebots_interfaces::msg::RobotGameData> enemies);
+    void PublishBallData(oxebots_interfaces::msg::BallPosition ball_data);
+
+    void GetDetectionData(const boost::system::error_code & error,
+                          std::size_t bytes_transferred);
     bool is_yellow_team;
+
+    void StartReceive();
 
    public:
     GameReceiverNode();

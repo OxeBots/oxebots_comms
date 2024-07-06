@@ -40,12 +40,24 @@ GameReceiverNode::GameReceiverNode()
       boost::asio::ip::address::from_string(get_parameter("host").as_string()),
       get_parameter("port").as_int());
 
+    endpoint = remote_endpoint;
+
     socket.open(remote_endpoint.protocol());
     socket.bind(remote_endpoint);
 
+    RCLCPP_INFO(get_logger(), "Socket bound to %s:%d",
+                remote_endpoint.address().to_string().c_str(),
+                remote_endpoint.port());
+
     RCLCPP_DEBUG(get_logger(), "Starting UDP thread");
-    udp_thread = std::thread(&GameReceiverNode::GetDetectionData, this);
-    udp_thread.detach();
+
+    socket.async_receive_from(
+      boost::asio::buffer(recv_buffer, 3096), remote_endpoint,
+      boost::bind(&GameReceiverNode::GetDetectionData, this,
+                  boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));
+
+    io_service.run();
 
     RCLCPP_INFO(get_logger(), "Game receiver module started");
 }
@@ -55,73 +67,114 @@ GameReceiverNode::~GameReceiverNode()
     RCLCPP_INFO(get_logger(), "Stopping game receiver module...");
     io_service.stop();
     socket.close();
-    if (udp_thread.joinable()) udp_thread.join();
 
     RCLCPP_INFO(get_logger(), "Game receiver module stopped");
 }
 
-void GameReceiverNode::GetDetectionData()
+void GameReceiverNode::StartReceive()
 {
-    try
-    {
-        while (rclcpp::ok())
-        {
-            char data[1024];
-            boost::asio::ip::udp::endpoint sender_endpoint;
-            size_t len = socket.receive_from(boost::asio::buffer(data, 1024),
-                                             sender_endpoint);
+    RCLCPP_DEBUG(get_logger(), "Starting receive");
+    socket.async_receive_from(
+      boost::asio::buffer(recv_buffer, 3096), endpoint,
+      boost::bind(&GameReceiverNode::GetDetectionData, this,
+                  boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));
+}
 
-            SSL_WrapperPacket packet;
-            packet.ParseFromArray(data, len);
-            SSL_DetectionFrame detection = packet.detection();
-            std::vector<oxebots_interfaces::msg::RobotGameData> yellow_robots;
-            std::vector<oxebots_interfaces::msg::RobotGameData> blue_robots;
+void GameReceiverNode::GetDetectionData(
+  const boost::system::error_code & error, std::size_t bytes_transferred)
+{
+    RCLCPP_DEBUG(get_logger(), "Handling received data");
+    if (!error || error == boost::asio::error::message_size)
+    {
+        RCLCPP_DEBUG(get_logger(), "Received data");
+
+        SSL_WrapperPacket packet;
+        packet.ParseFromArray(recv_buffer.data(), bytes_transferred);
+        SSL_DetectionFrame detection = packet.detection();
+
+        RCLCPP_DEBUG(get_logger(), "Received data from frame %d",
+                     detection.frame_number());
+
+        RCLCPP_DEBUG(get_logger(), detection.DebugString().c_str());
+
+        std::vector<oxebots_interfaces::msg::RobotGameData> yellow_robots;
+        std::vector<oxebots_interfaces::msg::RobotGameData> blue_robots;
+        RCLCPP_DEBUG(get_logger(), "Parsing robots");
+        RCLCPP_DEBUG(get_logger(), "Yellow robots: %d",
+                     detection.robots_yellow_size());
+        if (detection.robots_yellow_size() > 0)
+        {
+            RCLCPP_DEBUG(get_logger(), "yellow robots detected");
             for (auto robot : detection.robots_yellow())
             {
                 oxebots_interfaces::msg::RobotGameData robot_data;
+                RCLCPP_DEBUG(get_logger(), "Robot ID: %d", robot.robot_id());
                 robot_data.id = robot.robot_id();
                 robot_data.x = robot.x();
                 robot_data.y = robot.y();
                 robot_data.orientation = robot.orientation();
                 yellow_robots.push_back(robot_data);
             }
+        }
 
+        RCLCPP_DEBUG(get_logger(), "Blue robots: %d",
+                     detection.robots_blue_size());
+        if (detection.robots_blue_size() > 0)
+        {
+            RCLCPP_DEBUG(get_logger(), "blue robots detected");
             for (auto robot : detection.robots_blue())
             {
                 oxebots_interfaces::msg::RobotGameData robot_data;
+                RCLCPP_DEBUG(get_logger(), "Robot ID: %d", robot.robot_id());
                 robot_data.id = robot.robot_id();
                 robot_data.x = robot.x();
                 robot_data.y = robot.y();
                 robot_data.orientation = robot.orientation();
                 blue_robots.push_back(robot_data);
             }
+        }
 
+        RCLCPP_DEBUG(get_logger(), "Parsing ball");
+        if (detection.balls_size() > 0)
+        {
             oxebots_interfaces::msg::BallPosition ball_data;
             ball_data.x = detection.balls(0).x();
             ball_data.y = detection.balls(0).y();
             ball_data.z = detection.balls(0).z();
-
-            if (is_yellow_team)
-                return PublishData(yellow_robots, blue_robots, ball_data);
-
-            PublishData(blue_robots, yellow_robots, ball_data);
+            RCLCPP_DEBUG(get_logger(), "Ball position: (%f, %f, %f)",
+                         ball_data.x, ball_data.y, ball_data.z);
+            PublishBallData(ball_data);
         }
+
+        RCLCPP_DEBUG(get_logger(), "Publishing data");
+        if (is_yellow_team)
+            PublishRobotData(yellow_robots, blue_robots);
+        else
+            PublishRobotData(blue_robots, yellow_robots);
+
+        StartReceive();
     }
-    catch (const std::exception & e)
+    else
     {
-        RCLCPP_ERROR(get_logger(), "Error in GetDetectionData: %s", e.what());
+        RCLCPP_ERROR(get_logger(), "Error in handle_receive: %s",
+                     error.message().c_str());
     }
 }
 
-void GameReceiverNode::PublishData(
+void GameReceiverNode::PublishRobotData(
   std::vector<oxebots_interfaces::msg::RobotGameData> allies,
-  std::vector<oxebots_interfaces::msg::RobotGameData> enemies,
-  oxebots_interfaces::msg::BallPosition ball_data)
+  std::vector<oxebots_interfaces::msg::RobotGameData> enemies)
 {
     oxebots_interfaces::msg::RobotPosition robot_data;
     robot_data.allies = allies;
     robot_data.enemies = enemies;
 
     robot_publisher->publish(robot_data);
+}
+
+void GameReceiverNode::PublishBallData(
+  oxebots_interfaces::msg::BallPosition ball_data)
+{
     ball_publisher->publish(ball_data);
 }
