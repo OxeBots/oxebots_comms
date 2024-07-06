@@ -17,7 +17,7 @@ class UdpDriver
    protected:
     virtual void on_receive(const ProtoMessageType & packet) = 0;
     void add_host(const std::string & multicast_address, int port);
-    void stop() { socket_.close(); }
+    void stop();
 
    private:
     void start_receive();
@@ -37,6 +37,12 @@ UdpDriver<ProtoMessageType>::UdpDriver(boost::asio::io_context & io_context)
 : socket_(io_context)
 {
     std::cout << "UDP driver up and listening" << std::endl;
+}
+
+template <typename ProtoMessageType>
+void UdpDriver<ProtoMessageType>::stop()
+{
+    socket_.close();
 }
 
 template <typename ProtoMessageType>
