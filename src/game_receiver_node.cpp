@@ -72,17 +72,15 @@ void GameReceiverNode::on_receive(const SSL_WrapperPacket & packet)
         PublishData(blue_robots, yellow_robots, ball_data);
 }
 
-void GameReceiverNode::PublishData(
+void GameReceiverNode::PublishRobotData(
   std::vector<oxebots_interfaces::msg::RobotGameData> allies,
-  std::vector<oxebots_interfaces::msg::RobotGameData> enemies,
-  oxebots_interfaces::msg::BallPosition ball_data)
+  std::vector<oxebots_interfaces::msg::RobotGameData> enemies)
 {
     oxebots_interfaces::msg::RobotPosition robot_data;
     robot_data.allies = allies;
     robot_data.enemies = enemies;
 
     robot_publisher->publish(robot_data);
-    ball_publisher->publish(ball_data);
 }
 
 int main(int argc, char * argv[])

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <boost/asio.hpp>
+#include <boost/bind/bind.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include <thread>
 #include <vector>
 
 #include "oxebots_comms/udp_driver.hpp"
@@ -24,6 +24,8 @@ class GameReceiverNode : public rclcpp::Node,
       ball_publisher;
 
     bool is_yellow_team;
+
+    void StartReceive();
 
    public:
     GameReceiverNode(boost::asio::io_context & io_context);
