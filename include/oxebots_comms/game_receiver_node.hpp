@@ -28,8 +28,6 @@ class GameReceiverNode : public rclcpp::Node,
 
     bool is_yellow_team;
 
-    void StartReceive();
-
    public:
     GameReceiverNode(boost::asio::io_context & io_context);
 
