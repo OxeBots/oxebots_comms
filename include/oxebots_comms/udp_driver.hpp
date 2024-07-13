@@ -6,11 +6,21 @@
 
 #include <iostream>
 
+#include "rclcpp/logging.hpp"
+
+using namespace boost::asio::ip;
+
+using boost::asio::buffer;
+using boost::asio::io_context;
+using boost::asio::error::message_size;
+using boost::system::error_code;
+using rclcpp::get_logger;
+
 template <typename ProtoMessageType>
 class UdpDriver
 {
    public:
-    UdpDriver(boost::asio::io_context & io_context);
+    UdpDriver(io_context & io_context);
 
     virtual ~UdpDriver() = default;
 
@@ -21,46 +31,50 @@ class UdpDriver
 
    private:
     void start_receive();
-    void handle_receive(const boost::system::error_code & error,
+    void handle_receive(const error_code & error,
                         std::size_t bytes_transferred);
 
-    boost::asio::ip::udp::socket socket_;
-    boost::asio::ip::udp::endpoint endpoint_;
-    boost::asio::ip::udp::endpoint sender_endpoint_;
+    udp::socket socket_;
+    udp::endpoint endpoint_;
+    udp::endpoint sender_endpoint_;
     ProtoMessageType packet_;
     static constexpr int bufferSize = 2048;
     char data_[bufferSize];
 };
 
 template <typename ProtoMessageType>
-UdpDriver<ProtoMessageType>::UdpDriver(boost::asio::io_context & io_context)
+UdpDriver<ProtoMessageType>::UdpDriver(io_context & io_context)
 : socket_(io_context)
 {
-    std::cout << "UDP driver up and listening" << std::endl;
+    RCLCPP_INFO(get_logger("UdpDriver::UdpDriver"),
+                "Driver Up and Running...");
 }
 
 template <typename ProtoMessageType>
 void UdpDriver<ProtoMessageType>::stop()
 {
-    socket_.close();
+    error_code error;
+    socket_.close(error);
+
+    if (error)
+        RCLCPP_ERROR_STREAM(get_logger("UdpDriver::stop"), error.message());
 }
 
 template <typename ProtoMessageType>
 void UdpDriver<ProtoMessageType>::add_host(
   const std::string & multicast_address, int port)
 {
-    std::cout << "Adding host..." << std::endl;
-    endpoint_ = boost::asio::ip::udp::endpoint(
-      boost::asio::ip::address::from_string(multicast_address), port);
+    endpoint_ = udp::endpoint(address::from_string(multicast_address), port);
     socket_.open(endpoint_.protocol());
-    socket_.set_option(boost::asio::ip::udp::socket::reuse_address(true));
+    socket_.set_option(udp::socket::reuse_address(true));
     socket_.bind(endpoint_);
 
-    socket_.set_option(boost::asio::ip::multicast::join_group(
-      boost::asio::ip::address::from_string(multicast_address).to_v4(),
-      boost::asio::ip::address_v4::any()));
+    socket_.set_option(multicast::join_group(
+      address::from_string(multicast_address).to_v4(), address_v4::any()));
 
-    std::cout << "Starting receive..." << std::endl;
+    RCLCPP_INFO(get_logger("UdpDriver::add_host"), "Bind to %s:%d.",
+                multicast_address.c_str(), port);
+    RCLCPP_INFO(get_logger("UdpDriver::add_host"), "Starting receive...");
 
     start_receive();
 }
@@ -69,27 +83,27 @@ template <typename ProtoMessageType>
 void UdpDriver<ProtoMessageType>::start_receive()
 {
     socket_.async_receive_from(
-      boost::asio::buffer(data_, bufferSize), sender_endpoint_,
-      [this](const boost::system::error_code & error,
-             std::size_t bytes_transferred) {
+      buffer(data_, bufferSize), sender_endpoint_,
+      [this](const error_code & error, std::size_t bytes_transferred) {
           handle_receive(error, bytes_transferred);
       });
 }
 
 template <typename ProtoMessageType>
-void UdpDriver<ProtoMessageType>::handle_receive(
-  const boost::system::error_code & error, std::size_t bytes_transferred)
+void UdpDriver<ProtoMessageType>::handle_receive(const error_code & error,
+                                                 std::size_t bytes_transferred)
 {
-    if (!error || error == boost::asio::error::message_size)
+    if (!error || error == message_size)
     {
         if (packet_.ParseFromArray(data_, bytes_transferred))
             on_receive(packet_);
         else
-            std::cerr << "Failed to parse packet" << std::endl;
+            RCLCPP_ERROR(get_logger("UdpDriver::handle_receive"),
+                         "Failed to parse packet.");
     }
     else
-        std::cerr << "Receive error: " << error.message() << std::endl;
-
+        RCLCPP_ERROR_STREAM(get_logger("UdpDriver::handle_receive"),
+                            error.message());
     start_receive();
 }
 
