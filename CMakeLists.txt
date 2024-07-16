@@ -30,27 +30,34 @@ foreach(pkg IN LISTS REQUIRED_COMPONENTS)
 endforeach()
 
 include_directories(
-  include
+    include
 )
 
-# Macro for adding executables
-macro(add_binary name)
-    add_executable(${name}_node ${ARGN})
-    ament_target_dependencies(${name}_node ${REQUIRED_PACKAGES} ${REQUIRED_COMPONENTS})
-    target_link_libraries(${name}_node ${Protobuf_LIBRARIES})
+# list that associates the node name with the source files
+set(NODES
+    sender_node "src/sender_node.cpp src/robot_data_sender.cpp"
+    game_receiver_node "src/game_receiver_node.cpp"
+    gc_receiver_node "src/gc_receiver_node.cpp"
+)
+
+# Macro for adding executable nodes
+macro(add_node name)
+    add_executable(${name} ${ARGN})
+    ament_target_dependencies(${name} ${REQUIRED_PACKAGES} ${REQUIRED_COMPONENTS})
+    target_link_libraries(${name} ${Protobuf_LIBRARIES})
+    install(TARGETS ${name} DESTINATION lib/${PROJECT_NAME})
 endmacro()
 
-add_binary(sender src/sender_node.cpp src/robot_data_sender.cpp)
-add_binary(game_receiver src/game_receiver_node.cpp)
-add_binary(gc_receiver src/gc_receiver_node.cpp)
+list(LENGTH NODES nodes_length)
+math(EXPR last_index "${nodes_length} - 2")
 
-# Install targets
-install(TARGETS
-    sender_node
-    game_receiver_node
-    gc_receiver_node
-    DESTINATION lib/${PROJECT_NAME}
-)
+foreach(i RANGE 0 ${last_index} 2)
+    list(GET NODES ${i} node_name)
+    math(EXPR i++ "${i} + 1")
+    list(GET NODES ${i++} node_srcs)
+    string(REPLACE " " ";" node_srcs ${node_srcs})
+    add_node(${node_name} ${node_srcs})
+endforeach()
 
 install(
     DIRECTORY include/
