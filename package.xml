@@ -11,8 +11,12 @@
   <build_depend>protobuf</build_depend>
   <exec_depend>protobuf</exec_depend>
 
-  <depend>rclcpp</depend>
+  <depend>boost</depend>
   <depend>oxebots_interfaces</depend>
+  <depend>python3-empy</depend>
+  <depend>python3-lark-parser</depend>
+  <depend>python3-numpy</depend>
+  <depend>rclcpp</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

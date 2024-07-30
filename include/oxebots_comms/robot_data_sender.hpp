@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-#include "ssl_simulation_robot_control.pb.h"
+#include "oxebots_interfaces/ssl_simulation_robot_control.pb.h"
 
 class RobotDataSender
 {
@@ -17,10 +17,10 @@ class RobotDataSender
     int socket_fd;
     struct sockaddr_in server_address;
     std::string host;
-    std::string port;
+    int port;
 
    public:
-    RobotDataSender(std::string host, std::string port);
+    RobotDataSender(std::string host, int port);
     ~RobotDataSender();
     void SendControl(RobotControl control);
 };
