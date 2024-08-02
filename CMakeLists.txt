@@ -40,9 +40,18 @@ add_executable(
 ament_target_dependencies(game_receiver_node rclcpp oxebots_interfaces Boost)
 target_link_libraries(game_receiver_node ${Protobuf_LIBRARIES})
 
+add_executable(
+  geometry_receiver_node
+  src/geometry_receiver_node.cpp
+)
+
+ament_target_dependencies(geometry_receiver_node rclcpp oxebots_interfaces Boost)
+target_link_libraries(geometry_receiver_node ${Protobuf_LIBRARIES})
+
 install(TARGETS
   sender_node
   game_receiver_node
+  geometry_receiver_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
