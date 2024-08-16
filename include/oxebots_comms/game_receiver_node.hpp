@@ -10,8 +10,8 @@
 #include "oxebots_interfaces/msg/ball_position.hpp"
 #include "oxebots_interfaces/msg/robot_game_data.hpp"
 #include "oxebots_interfaces/msg/robot_position.hpp"
-#include "oxebots_interfaces/ssl_vision_detection.pb.h"
-#include "oxebots_interfaces/ssl_vision_wrapper.pb.h"
+#include "oxebots_interfaces/messages_robocup_ssl_detection.pb.h"
+#include "oxebots_interfaces/messages_robocup_ssl_wrapper.pb.h"
 
 class GameReceiverNode : public rclcpp::Node,
                          public UdpDriver<SSL_WrapperPacket>
