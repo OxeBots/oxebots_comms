@@ -35,6 +35,8 @@ class GCReceiverNode : public rclcpp::Node, public UdpDriver<Referee>
     void get_ball_left_field(const GameEvent_BallLeftField & ball_left_field,
                              oxebots_interfaces::msg::GameEvent & game_event);
 
+    oxebots_interfaces::msg::Vector2 get_vector2(const Vector2 & vector);
+
    public:
     GCReceiverNode(boost::asio::io_context & io_context);
 

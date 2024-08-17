@@ -100,15 +100,21 @@ oxebots_interfaces::msg::TeamInfo GCReceiverNode::get_team_info(
     return team_info;
 }
 
+oxebots_interfaces::msg::Vector2 GCReceiverNode::get_vector2(
+  const Vector2 & vector)
+{
+    oxebots_interfaces::msg::Vector2 vector2;
+    vector2.x = vector.x();
+    vector2.y = vector.y();
+    return vector2;
+}
+
 void GCReceiverNode::get_ball_left_field(
   const GameEvent_BallLeftField & ball_left_field,
   oxebots_interfaces::msg::GameEvent & game_event)
 {
     game_event.by_robot = ball_left_field.by_bot();
-    auto location = oxebots_interfaces::msg::Vector2();
-    location.x = ball_left_field.location().x();
-    location.y = ball_left_field.location().y();
-    game_event.location = location;
+    game_event.location = get_vector2(ball_left_field.location());
 }
 
 oxebots_interfaces::msg::GameEvent GCReceiverNode::get_game_event(
@@ -137,14 +143,9 @@ oxebots_interfaces::msg::GameEvent GCReceiverNode::get_game_event(
         case oxebots_interfaces::msg::GameEvent::AIMLESS_KICK:
         {
             game_event.by_robot = event.aimless_kick().by_bot();
-            auto location = oxebots_interfaces::msg::Vector2();
-            location.x = event.aimless_kick().location().x();
-            location.y = event.aimless_kick().location().y();
-            game_event.location = location;
-            auto kick_location = oxebots_interfaces::msg::Vector2();
-            kick_location.x = event.aimless_kick().kick_location().x();
-            kick_location.y = event.aimless_kick().kick_location().y();
-            game_event.kick_location = kick_location;
+            game_event.location = get_vector2(event.aimless_kick().location());
+            game_event.kick_location =
+              get_vector2(event.aimless_kick().kick_location());
             break;
         }
         case oxebots_interfaces::msg::GameEvent::
@@ -152,12 +153,8 @@ oxebots_interfaces::msg::GameEvent GCReceiverNode::get_game_event(
         {
             game_event.by_robot =
               event.attacker_too_close_to_defense_area().by_bot();
-            auto location = oxebots_interfaces::msg::Vector2();
-            location.x =
-              event.attacker_too_close_to_defense_area().location().x();
-            location.y =
-              event.attacker_too_close_to_defense_area().location().y();
-            game_event.location = location;
+            game_event.location = get_vector2(
+              event.attacker_too_close_to_defense_area().location());
             break;
         }
         case oxebots_interfaces::msg::GameEvent::PLACEMENT_SUCCEEDED:
@@ -180,23 +177,17 @@ oxebots_interfaces::msg::GameEvent GCReceiverNode::get_game_event(
                 game_event.msg = event.penalty_kick_failed().reason();
 
             if (event.penalty_kick_failed().has_location())
-            {
-                auto location = oxebots_interfaces::msg::Vector2();
-                location.x = event.penalty_kick_failed().location().x();
-                location.y = event.penalty_kick_failed().location().y();
-                game_event.location = location;
-            }
+                game_event.location =
+                  get_vector2(event.penalty_kick_failed().location());
+
             break;
         }
         case oxebots_interfaces::msg::GameEvent::NO_PROGRESS_IN_GAME:
         {
             if (event.no_progress_in_game().has_location())
-            {
-                auto location = oxebots_interfaces::msg::Vector2();
-                location.x = event.no_progress_in_game().location().x();
-                location.y = event.no_progress_in_game().location().y();
-                game_event.location = location;
-            }
+                game_event.location =
+                  get_vector2(event.no_progress_in_game().location());
+
             if (event.no_progress_in_game().has_time())
                 game_event.time =
                   rclcpp::Time(event.no_progress_in_game().time());
@@ -256,8 +247,6 @@ void GCReceiverNode::on_receive(const Referee & packet)
 
     if (packet.has_next_command())
         gc_referee.next_command = packet.next_command();
-    else
-        gc_referee.next_command = 0;
 
     gc_referee.game_events = std::vector<oxebots_interfaces::msg::GameEvent>();
     for (auto event : packet.game_events())
@@ -280,13 +269,9 @@ void GCReceiverNode::on_receive(const Referee & packet)
     if (packet.has_current_action_time_remaining())
         gc_referee.current_action_time_remaining =
           rclcpp::Time(packet.current_action_time_remaining());
-    else
-        gc_referee.current_action_time_remaining = rclcpp::Time(0);
 
     if (packet.has_status_message())
         gc_referee.status_message = packet.status_message();
-    else
-        gc_referee.status_message = "";
 
     PublishGCData(gc_referee);
 }
