@@ -52,50 +52,32 @@ oxebots_interfaces::msg::TeamInfo GCReceiver::get_team_info(
 
     if (team.has_foul_counter())
         team_info.foul_counter = team.foul_counter();
-    else
-        team_info.foul_counter = 0;
 
     if (team.has_ball_placement_failures())
         team_info.ball_placement_failures = team.ball_placement_failures();
-    else
-        team_info.ball_placement_failures = 0;
 
     if (team.has_can_place_ball())
         team_info.can_place_ball = team.can_place_ball();
-    else
-        team_info.can_place_ball = false;
 
     if (team.has_max_allowed_bots())
         team_info.max_allowed_bots = team.max_allowed_bots();
-    else
-        team_info.max_allowed_bots = 0;
 
     if (team.has_bot_substitution_intent())
         team_info.bot_substitution_intent = team.bot_substitution_intent();
-    else
-        team_info.bot_substitution_intent = false;
 
     if (team.has_ball_placement_failures_reached())
         team_info.ball_placement_failures_reached =
           team.ball_placement_failures_reached();
-    else
-        team_info.ball_placement_failures_reached = false;
 
     if (team.has_bot_substitution_allowed())
         team_info.bot_substitution_allowed = team.bot_substitution_allowed();
-    else
-        team_info.bot_substitution_allowed = false;
 
     if (team.has_bot_substitutions_left())
         team_info.bot_substitutions_left = team.bot_substitutions_left();
-    else
-        team_info.bot_substitutions_left = 0;
 
     if (team.has_bot_substitution_time_left())
         team_info.bot_substitution_time_left =
           team.bot_substitution_time_left();
-    else
-        team_info.bot_substitution_time_left = 0;
 
     return team_info;
 }
