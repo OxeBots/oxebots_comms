@@ -15,6 +15,7 @@ set(REQUIRED_PACKAGES
     oxebots_interfaces
     Protobuf
     rclcpp
+    geometry_msgs
 )
 
 set(REQUIRED_COMPONENTS
