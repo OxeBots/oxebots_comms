@@ -38,8 +38,9 @@ class UdpDriver
     udp::endpoint endpoint_;
     udp::endpoint sender_endpoint_;
     ProtoMessageType packet_;
-    static constexpr int bufferSize = 2048;
-    char data_[bufferSize];
+
+    static constexpr int bufferSize = 4096;
+    std::array<uint8_t, bufferSize> data_;
 };
 
 template <typename ProtoMessageType>
@@ -83,7 +84,7 @@ template <typename ProtoMessageType>
 void UdpDriver<ProtoMessageType>::start_receive()
 {
     socket_.async_receive_from(
-      buffer(data_, bufferSize), sender_endpoint_,
+      buffer(data_), sender_endpoint_,
       [this](const error_code & error, std::size_t bytes_transferred) {
           handle_receive(error, bytes_transferred);
       });
@@ -95,7 +96,7 @@ void UdpDriver<ProtoMessageType>::handle_receive(const error_code & error,
 {
     if (!error || error == message_size)
     {
-        if (packet_.ParseFromArray(data_, bytes_transferred))
+        if (packet_.ParseFromArray(data_.data(), bytes_transferred))
             on_receive(packet_);
         else
             RCLCPP_ERROR(get_logger("UdpDriver::handle_receive"),
