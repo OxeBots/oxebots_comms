@@ -20,45 +20,52 @@ template <typename ProtoMessageType>
 class UdpDriver
 {
    public:
-    UdpDriver(io_context & io_context);
+    UdpDriver();
 
-    virtual ~UdpDriver() = default;
+    virtual ~UdpDriver();
 
    protected:
     virtual void on_receive(const ProtoMessageType & packet) = 0;
     void add_host(const std::string & multicast_address, int port);
-    void stop();
 
    private:
     void start_receive();
     void handle_receive(const error_code & error,
                         std::size_t bytes_transferred);
 
-    udp::socket socket_;
+    io_context io_context_;
     udp::endpoint endpoint_;
     udp::endpoint sender_endpoint_;
     ProtoMessageType packet_;
+
+    udp::socket socket_;
+    std::thread io_thread_;
 
     static constexpr int bufferSize = 4096;
     std::array<uint8_t, bufferSize> data_;
 };
 
 template <typename ProtoMessageType>
-UdpDriver<ProtoMessageType>::UdpDriver(io_context & io_context)
-: socket_(io_context)
+UdpDriver<ProtoMessageType>::UdpDriver() : socket_(io_context_)
 {
     RCLCPP_INFO(get_logger("UdpDriver::UdpDriver"),
                 "Driver Up and Running...");
+
+    io_thread_ = std::thread([this]() { io_context_.run(); });
 }
 
 template <typename ProtoMessageType>
-void UdpDriver<ProtoMessageType>::stop()
+UdpDriver<ProtoMessageType>::~UdpDriver()
 {
     error_code error;
     socket_.close(error);
 
     if (error)
         RCLCPP_ERROR_STREAM(get_logger("UdpDriver::stop"), error.message());
+
+    io_context_.stop();
+
+    if (io_thread_.joinable()) io_thread_.join();
 }
 
 template <typename ProtoMessageType>
