@@ -7,11 +7,11 @@
 #include <vector>
 
 #include "oxebots_comms/udp_driver.hpp"
+#include "oxebots_interfaces/messages_robocup_ssl_detection.pb.h"
+#include "oxebots_interfaces/messages_robocup_ssl_wrapper.pb.h"
 #include "oxebots_interfaces/msg/ball_position.hpp"
 #include "oxebots_interfaces/msg/robot_game_data.hpp"
 #include "oxebots_interfaces/msg/robot_position.hpp"
-#include "oxebots_interfaces/messages_robocup_ssl_detection.pb.h"
-#include "oxebots_interfaces/messages_robocup_ssl_wrapper.pb.h"
 
 class GameReceiver : public rclcpp::Node,
                          public UdpDriver<SSL_WrapperPacket>
@@ -23,13 +23,10 @@ class GameReceiver : public rclcpp::Node,
     rclcpp::Publisher<oxebots_interfaces::msg::BallPosition>::SharedPtr
       ball_publisher;
 
-    boost::asio::io_context & io_context;
-    std::thread io_thread;
-
     bool is_yellow_team;
 
    public:
-    GameReceiver(boost::asio::io_context & io_context);
+    GameReceiver();
 
     ~GameReceiver();
 

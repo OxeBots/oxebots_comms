@@ -10,20 +10,17 @@
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include "oxebots_comms/game_receiver_node.hpp"
+#include "oxebots_comms/game_receiver.hpp"
 #include "oxebots_interfaces/msg/ball_position.hpp"
 #include "oxebots_interfaces/msg/robot_game_data.hpp"
 #include "oxebots_interfaces/msg/robot_position.hpp"
-#include "oxebots_interfaces/ssl_vision_detection.pb.h"
-#include "oxebots_interfaces/ssl_vision_wrapper.pb.h"
 
 class GameReceiverTest : public ::testing::Test
 {
    protected:
     void SetUp() override
     {
-        boost::asio::io_context io_context;
-        node_ = std::make_shared<GameReceiver>(io_context);
+        node_ = std::make_shared<GameReceiver>();
         RCLCPP_INFO(rclcpp::get_logger("test_logger"), "Node created.");
     }
 

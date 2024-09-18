@@ -38,7 +38,6 @@ include_directories(
 # list that associates the node name with the source files
 set(NODES
     sender_node "src/sender.cpp src/robot_data_sender.cpp"
-    gc_receiver_node "src/gc_receiver.cpp"
 )
 
 # Macro for adding executable nodes
@@ -60,7 +59,7 @@ foreach(i RANGE 0 ${last_index} 2)
     add_node(${node_name} ${node_srcs})
 endforeach()
 
-add_executable(comms_composition src/composition.cpp src/game_receiver.cpp)
+add_executable(comms_composition src/composition.cpp src/game_receiver.cpp src/gc_receiver.cpp)
 ament_target_dependencies(comms_composition ${REQUIRED_PACKAGES} ${REQUIRED_COMPONENTS})
 target_link_libraries(comms_composition ${Protobuf_LIBRARIES})
 install(TARGETS comms_composition DESTINATION lib/${PROJECT_NAME})

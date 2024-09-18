@@ -1,24 +1,19 @@
 #include "oxebots_comms/gc_receiver.hpp"
 
-GCReceiver::GCReceiver(boost::asio::io_context & io_context)
+GCReceiver::GCReceiver()
 : rclcpp::Node("oxebots_comms"),
-  UdpDriver<Referee>(io_context),
-  io_context(io_context)
+  UdpDriver<Referee>(
+    declare_parameter<std::string>("referee_ip", "224.5.23.1"),
+    declare_parameter<uint16_t>("referee_port", 10003),
+    declare_parameter<std::string>("interface_ip", ""))
 {
-    declare_parameter("host", "224.5.23.1");
-    declare_parameter("port", 10003);
     declare_parameter("topic_retention", 10);
     declare_parameter("is_team_info", false);
     declare_parameter("gc_topic", "gc_data");
 
     RCLCPP_DEBUG(get_logger(), "Creating host...");
 
-    add_host(get_parameter("host").as_string(),
-             get_parameter("port").as_int());
-
     RCLCPP_DEBUG(get_logger(), "Creating GC Publisher...");
-
-    io_thread = std::thread([this]() { this->io_context.run(); });
 
     RCLCPP_DEBUG(get_logger(), "Creating gc publisher...");
 
@@ -29,13 +24,7 @@ GCReceiver::GCReceiver(boost::asio::io_context & io_context)
     RCLCPP_INFO(get_logger(), "Game controller receiver module started");
 }
 
-GCReceiver::~GCReceiver()
-{
-    RCLCPP_INFO(get_logger(), "Stopping game receiver module...");
-    io_context.stop();
-    if (io_thread.joinable()) io_thread.join();
-    stop();
-}
+GCReceiver::~GCReceiver() {}
 
 oxebots_interfaces::msg::TeamInfo GCReceiver::get_team_info(
   const Referee_TeamInfo & team)
@@ -82,10 +71,10 @@ oxebots_interfaces::msg::TeamInfo GCReceiver::get_team_info(
     return team_info;
 }
 
-oxebots_interfaces::msg::Vector2 GCReceiver::get_vector2(
+oxebots_interfaces::msg::Vector2f GCReceiver::get_vector2(
   const Vector2 & vector)
 {
-    oxebots_interfaces::msg::Vector2 vector2;
+    oxebots_interfaces::msg::Vector2f vector2;
     vector2.x = vector.x();
     vector2.y = vector.y();
     return vector2;
@@ -263,12 +252,3 @@ void GCReceiver::PublishGCData(oxebots_interfaces::msg::Referee gc_referee)
     gc_publisher->publish(gc_referee);
 }
 
-int main(int argc, char * argv[])
-{
-    rclcpp::init(argc, argv);
-    boost::asio::io_context io_context;
-
-    rclcpp::spin(std::make_shared<GCReceiver>(io_context));
-    rclcpp::shutdown();
-    return 0;
-}

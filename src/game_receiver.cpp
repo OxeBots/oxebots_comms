@@ -1,26 +1,20 @@
 #include "oxebots_comms/game_receiver.hpp"
 
-GameReceiver::GameReceiver(boost::asio::io_context & io_context)
+GameReceiver::GameReceiver()
 : rclcpp::Node("oxebots_comms"),
-  UdpDriver<SSL_WrapperPacket>(io_context),
-  io_context(io_context)
+  UdpDriver<SSL_WrapperPacket>(
+    declare_parameter<std::string>("ssl_vision_ip", "224.5.23.2"),
+    declare_parameter<uint16_t>("ssl_vision_port", 10006),
+    declare_parameter<std::string>("interface_ip", ""))
 {
-    RCLCPP_INFO(get_logger(), "Starting game receiver module...");
-
-    declare_parameter("host", "224.5.23.2");
-    declare_parameter("port", 10020);
     declare_parameter("robot_topic", "robot_data");
     declare_parameter("ball_topic", "ball_data");
     declare_parameter("topic_retention", 10);
     declare_parameter("is_yellow_team", false);
 
-    RCLCPP_DEBUG(get_logger(), "Creating RobotDataPublisher");
-
     robot_publisher = create_publisher<oxebots_interfaces::msg::RobotPosition>(
       get_parameter("robot_topic").as_string(),
       get_parameter("topic_retention").as_int());
-
-    RCLCPP_DEBUG(get_logger(), "Creating BallDataPublisher");
 
     ball_publisher = create_publisher<oxebots_interfaces::msg::BallPosition>(
       get_parameter("ball_topic").as_string(),
@@ -28,22 +22,12 @@ GameReceiver::GameReceiver(boost::asio::io_context & io_context)
 
     is_yellow_team = get_parameter("is_yellow_team").as_bool();
 
-    RCLCPP_DEBUG(get_logger(), "Adding host...");
-
-    add_host(get_parameter("host").as_string(),
-             get_parameter("port").as_int());
-
-    io_thread = std::thread([this]() { this->io_context.run(); });
-
     RCLCPP_INFO(get_logger(), "Game receiver module started");
 }
 
 GameReceiver::~GameReceiver()
 {
     RCLCPP_INFO(get_logger(), "Stopping game receiver module...");
-    io_context.stop();
-    if (io_thread.joinable()) io_thread.join();
-    stop();
 }
 
 void GameReceiver::on_receive(const SSL_WrapperPacket & packet)
