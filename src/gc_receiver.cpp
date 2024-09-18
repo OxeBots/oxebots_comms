@@ -18,7 +18,7 @@ GCReceiver::GCReceiver()
     RCLCPP_DEBUG(get_logger(), "Creating gc publisher...");
 
     gc_publisher = create_publisher<oxebots_interfaces::msg::Referee>(
-      get_parameter("gc_topic").as_string(),
+      get_parameter("gc_topic_name").as_string(),
       get_parameter("topic_retention").as_int());
 
     RCLCPP_INFO(get_logger(), "Game controller receiver module started");
@@ -192,7 +192,6 @@ oxebots_interfaces::msg::GameEvent GCReceiver::get_game_event(
 
 void GCReceiver::on_receive(const Referee & packet)
 {
-    RCLCPP_INFO(get_logger(), "%s", packet.DebugString().c_str());
     oxebots_interfaces::msg::Referee gc_referee;
     gc_referee.source_identifier = packet.source_identifier();
     gc_referee.match_type = packet.match_type();
