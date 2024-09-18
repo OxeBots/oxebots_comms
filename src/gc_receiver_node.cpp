@@ -1,12 +1,12 @@
 #include "oxebots_comms/gc_receiver_node.hpp"
 
-GCReceiverNode::GCReceiverNode(boost::asio::io_context & io_context)
+GCReceiverNode::GCReceiverNode()
 : rclcpp::Node("oxebots_comms"),
-  UdpDriver<Referee>(io_context),
-  io_context(io_context)
+  UdpDriver<Referee>(
+    declare_parameter<std::string>("referee_ip", "224.5.23.1"),
+    declare_parameter<uint16_t>("referee_port", 10003),
+    declare_parameter<std::string>("interface_ip", ""))
 {
-    declare_parameter("host", "224.5.23.1");
-    declare_parameter("port", 10003);
     declare_parameter("topic_retention", 10);
     declare_parameter("is_team_info", false);
     declare_parameter("gc_topic", "gc_data");
@@ -29,13 +29,7 @@ GCReceiverNode::GCReceiverNode(boost::asio::io_context & io_context)
     RCLCPP_INFO(get_logger(), "Game controller receiver module started");
 }
 
-GCReceiverNode::~GCReceiverNode()
-{
-    RCLCPP_INFO(get_logger(), "Stopping game receiver module...");
-    io_context.stop();
-    if (io_thread.joinable()) io_thread.join();
-    stop();
-}
+GCReceiverNode::~GCReceiverNode() {}
 
 oxebots_interfaces::msg::TeamInfo GCReceiverNode::get_team_info(
   const Referee_TeamInfo & team)
@@ -266,9 +260,8 @@ void GCReceiverNode::PublishGCData(oxebots_interfaces::msg::Referee gc_referee)
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
-    boost::asio::io_context io_context;
 
-    rclcpp::spin(std::make_shared<GCReceiverNode>(io_context));
+    rclcpp::spin(std::make_shared<GCReceiverNode>());
     rclcpp::shutdown();
     return 0;
 }

@@ -18,19 +18,20 @@ using boost::asio::buffer;
 using boost::asio::io_context;
 using boost::asio::error::message_size;
 using boost::system::error_code;
+using boost::system::system_error;
 using rclcpp::get_logger;
 
 template <typename ProtoMessageType>
 class UdpDriver
 {
    public:
-    UdpDriver();
+    UdpDriver(const std::string & multicast_address, uint16_t port,
+              const std::string & interface_address = "");
 
     virtual ~UdpDriver();
 
    protected:
     virtual void on_receive(const ProtoMessageType & packet) = 0;
-    void add_host(const std::string & multicast_address, uint16_t port);
 
    private:
     void start_receive();
@@ -50,10 +51,45 @@ class UdpDriver
 };
 
 template <typename ProtoMessageType>
-UdpDriver<ProtoMessageType>::UdpDriver() : io_context_(), socket_(io_context_)
+UdpDriver<ProtoMessageType>::UdpDriver(const std::string & multicast_address,
+                                       uint16_t port,
+                                       const std::string & interface_address)
+: io_context_(), socket_(io_context_)
 {
-    RCLCPP_INFO(get_logger("UdpDriver::UdpDriver"),
-                "Driver Up and Running...");
+    try
+    {
+        const auto addr = address::from_string(multicast_address).to_v4();
+        endpoint_ = udp::endpoint(addr, port);
+
+        socket_.open(endpoint_.protocol());
+        socket_.set_option(udp::socket::reuse_address(true));
+        socket_.bind(endpoint_);
+
+        auto iface_addr = address_v4::any();
+
+        if (interface_address.empty())
+            socket_.set_option(multicast::join_group(addr, iface_addr));
+        else
+        {
+            iface_addr = address::from_string(interface_address).to_v4();
+            socket_.set_option(multicast::join_group(addr, iface_addr));
+        }
+
+        RCLCPP_INFO(rclcpp::get_logger("UdpDriver"), "Bound to %s:%d from %s",
+                    multicast_address.c_str(), port,
+                    iface_addr.to_string().c_str());
+
+        start_receive();
+
+        io_thread_ = std::thread([this]() { io_context_.run(); });
+
+        RCLCPP_INFO(get_logger("UdpDriver"), "Driver Up and Running...");
+    }
+    catch (const system_error & e)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("UdpDriver"),
+                     "Error initializing UdpDriver: %s", e.what());
+    }
 }
 
 template <typename ProtoMessageType>
@@ -69,36 +105,6 @@ UdpDriver<ProtoMessageType>::~UdpDriver()
     io_context_.stop();
 
     if (io_thread_.joinable()) io_thread_.join();
-}
-
-template <typename ProtoMessageType>
-void UdpDriver<ProtoMessageType>::add_host(
-  const std::string & multicast_address, uint16_t port)
-{
-    try
-    {
-        const auto addr = address::from_string(multicast_address).to_v4();
-
-        endpoint_ = udp::endpoint(addr, port);
-
-        socket_.open(endpoint_.protocol());
-        socket_.set_option(udp::socket::reuse_address(true));
-        socket_.bind(endpoint_);
-
-        socket_.set_option(multicast::join_group(addr, address_v4::any()));
-
-        RCLCPP_INFO(rclcpp::get_logger("UdpDriver::add_host"),
-                    "Bound to %s:%d. Starting receive...",
-                    multicast_address.c_str(), port);
-        start_receive();
-
-        io_thread_ = std::thread([this]() { io_context_.run(); });
-    }
-    catch (const boost::system::system_error & e)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("UdpDriver::add_host"),
-                     "Error adding host: %s", e.what());
-    }
 }
 
 template <typename ProtoMessageType>

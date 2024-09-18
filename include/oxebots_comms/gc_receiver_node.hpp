@@ -38,7 +38,7 @@ class GCReceiverNode : public rclcpp::Node, public UdpDriver<Referee>
     oxebots_interfaces::msg::Vector2 get_vector2(const Vector2 & vector);
 
    public:
-    GCReceiverNode(boost::asio::io_context & io_context);
+    GCReceiverNode();
 
     ~GCReceiverNode();
 
