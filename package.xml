@@ -17,6 +17,7 @@
   <depend>python3-lark-parser</depend>
   <depend>python3-numpy</depend>
   <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
