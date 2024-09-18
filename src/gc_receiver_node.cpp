@@ -9,21 +9,10 @@ GCReceiverNode::GCReceiverNode()
 {
     declare_parameter("topic_retention", 10);
     declare_parameter("is_team_info", false);
-    declare_parameter("gc_topic", "gc_data");
-
-    RCLCPP_DEBUG(get_logger(), "Creating host...");
-
-    add_host(get_parameter("host").as_string(),
-             get_parameter("port").as_int());
-
-    RCLCPP_DEBUG(get_logger(), "Creating GC Publisher...");
-
-    io_thread = std::thread([this]() { this->io_context.run(); });
-
-    RCLCPP_DEBUG(get_logger(), "Creating gc publisher...");
+    declare_parameter("gc_topic_name", "gc_data");
 
     gc_publisher = create_publisher<oxebots_interfaces::msg::Referee>(
-      get_parameter("gc_topic").as_string(),
+      get_parameter("gc_topic_name").as_string(),
       get_parameter("topic_retention").as_int());
 
     RCLCPP_INFO(get_logger(), "Game controller receiver module started");
@@ -76,10 +65,10 @@ oxebots_interfaces::msg::TeamInfo GCReceiverNode::get_team_info(
     return team_info;
 }
 
-oxebots_interfaces::msg::Vector2 GCReceiverNode::get_vector2(
+oxebots_interfaces::msg::Vector2f GCReceiverNode::get_vector2(
   const Vector2 & vector)
 {
-    oxebots_interfaces::msg::Vector2 vector2;
+    oxebots_interfaces::msg::Vector2f vector2;
     vector2.x = vector.x();
     vector2.y = vector.y();
     return vector2;
@@ -197,7 +186,6 @@ oxebots_interfaces::msg::GameEvent GCReceiverNode::get_game_event(
 
 void GCReceiverNode::on_receive(const Referee & packet)
 {
-    RCLCPP_INFO(get_logger(), "%s", packet.DebugString().c_str());
     oxebots_interfaces::msg::Referee gc_referee;
     gc_referee.source_identifier = packet.source_identifier();
     gc_referee.match_type = packet.match_type();
