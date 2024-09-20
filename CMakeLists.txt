@@ -36,9 +36,8 @@ include_directories(
 # list that associates the node name with the source files
 set(NODES
     sender_node "src/sender_node.cpp src/robot_data_sender.cpp"
-    game_receiver_node "src/game_receiver_node.cpp"
     gc_receiver_node "src/gc_receiver_node.cpp"
-    geometry_receiver_node "src/geometry_receiver_node.cpp"
+    vision_receiver_node "src/vision_receiver_node.cpp"
 )
 
 # Macro for adding executable nodes
