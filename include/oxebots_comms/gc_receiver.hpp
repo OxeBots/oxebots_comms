@@ -16,7 +16,7 @@
 
 #include "oxebots_comms/udp_driver.hpp"
 
-class GCReceiverNode : public rclcpp::Node, public UdpDriver<Referee>
+class GCReceiver : public rclcpp::Node, public UdpDriver<Referee>
 {
    private:
     boost::asio::io_context & io_context;
@@ -38,9 +38,9 @@ class GCReceiverNode : public rclcpp::Node, public UdpDriver<Referee>
     oxebots_interfaces::msg::Vector2 get_vector2(const Vector2 & vector);
 
    public:
-    GCReceiverNode(boost::asio::io_context & io_context);
+    GCReceiver(boost::asio::io_context & io_context);
 
-    ~GCReceiverNode();
+    ~GCReceiver();
 
    protected:
     void on_receive(const Referee & packet) override;

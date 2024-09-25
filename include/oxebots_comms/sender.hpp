@@ -8,7 +8,7 @@
 #include "robot_data_sender.hpp"
 #include "ssl_simulation_robot_control.pb.h"
 
-class CommsNode : public rclcpp::Node
+class Comms : public rclcpp::Node
 {
    private:
     RobotDataSender * data_sender;
@@ -20,5 +20,5 @@ class CommsNode : public rclcpp::Node
     void HandleCmd(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg);
 
    public:
-    CommsNode();
+    Comms();
 };

@@ -13,7 +13,7 @@
 #include "oxebots_interfaces/ssl_vision_detection.pb.h"
 #include "oxebots_interfaces/ssl_vision_wrapper.pb.h"
 
-class GameReceiverNode : public rclcpp::Node,
+class GameReceiver : public rclcpp::Node,
                          public UdpDriver<SSL_WrapperPacket>
 {
    private:
@@ -29,9 +29,9 @@ class GameReceiverNode : public rclcpp::Node,
     bool is_yellow_team;
 
    public:
-    GameReceiverNode(boost::asio::io_context & io_context);
+    GameReceiver(boost::asio::io_context & io_context);
 
-    ~GameReceiverNode();
+    ~GameReceiver();
 
    protected:
     void on_receive(const SSL_WrapperPacket & packet) override;

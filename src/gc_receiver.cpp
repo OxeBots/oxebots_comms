@@ -1,6 +1,6 @@
-#include "oxebots_comms/gc_receiver_node.hpp"
+#include "oxebots_comms/gc_receiver.hpp"
 
-GCReceiverNode::GCReceiverNode(boost::asio::io_context & io_context)
+GCReceiver::GCReceiver(boost::asio::io_context & io_context)
 : rclcpp::Node("oxebots_comms"),
   UdpDriver<Referee>(io_context),
   io_context(io_context)
@@ -29,7 +29,7 @@ GCReceiverNode::GCReceiverNode(boost::asio::io_context & io_context)
     RCLCPP_INFO(get_logger(), "Game controller receiver module started");
 }
 
-GCReceiverNode::~GCReceiverNode()
+GCReceiver::~GCReceiver()
 {
     RCLCPP_INFO(get_logger(), "Stopping game receiver module...");
     io_context.stop();
@@ -37,7 +37,7 @@ GCReceiverNode::~GCReceiverNode()
     stop();
 }
 
-oxebots_interfaces::msg::TeamInfo GCReceiverNode::get_team_info(
+oxebots_interfaces::msg::TeamInfo GCReceiver::get_team_info(
   const Referee_TeamInfo & team)
 {
     oxebots_interfaces::msg::TeamInfo team_info;
@@ -100,7 +100,7 @@ oxebots_interfaces::msg::TeamInfo GCReceiverNode::get_team_info(
     return team_info;
 }
 
-oxebots_interfaces::msg::Vector2 GCReceiverNode::get_vector2(
+oxebots_interfaces::msg::Vector2 GCReceiver::get_vector2(
   const Vector2 & vector)
 {
     oxebots_interfaces::msg::Vector2 vector2;
@@ -109,7 +109,7 @@ oxebots_interfaces::msg::Vector2 GCReceiverNode::get_vector2(
     return vector2;
 }
 
-void GCReceiverNode::get_ball_left_field(
+void GCReceiver::get_ball_left_field(
   const GameEvent_BallLeftField & ball_left_field,
   oxebots_interfaces::msg::GameEvent & game_event)
 {
@@ -117,7 +117,7 @@ void GCReceiverNode::get_ball_left_field(
     game_event.location = get_vector2(ball_left_field.location());
 }
 
-oxebots_interfaces::msg::GameEvent GCReceiverNode::get_game_event(
+oxebots_interfaces::msg::GameEvent GCReceiver::get_game_event(
   const GameEvent & event)
 {
     oxebots_interfaces::msg::GameEvent game_event;
@@ -219,7 +219,7 @@ oxebots_interfaces::msg::GameEvent GCReceiverNode::get_game_event(
     return game_event;
 }
 
-void GCReceiverNode::on_receive(const Referee & packet)
+void GCReceiver::on_receive(const Referee & packet)
 {
     RCLCPP_INFO(get_logger(), "%s", packet.DebugString().c_str());
     oxebots_interfaces::msg::Referee gc_referee;
@@ -276,7 +276,7 @@ void GCReceiverNode::on_receive(const Referee & packet)
     PublishGCData(gc_referee);
 }
 
-void GCReceiverNode::PublishGCData(oxebots_interfaces::msg::Referee gc_referee)
+void GCReceiver::PublishGCData(oxebots_interfaces::msg::Referee gc_referee)
 {
     gc_publisher->publish(gc_referee);
 }
@@ -286,7 +286,7 @@ int main(int argc, char * argv[])
     rclcpp::init(argc, argv);
     boost::asio::io_context io_context;
 
-    rclcpp::spin(std::make_shared<GCReceiverNode>(io_context));
+    rclcpp::spin(std::make_shared<GCReceiver>(io_context));
     rclcpp::shutdown();
     return 0;
 }

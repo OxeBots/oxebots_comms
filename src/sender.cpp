@@ -1,14 +1,14 @@
-#include "oxebots_comms/sender_node.hpp"
+#include "oxebots_comms/sender.hpp"
 
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<CommsNode>());
+    rclcpp::spin(std::make_shared<Comms>());
     rclcpp::shutdown();
     return 0;
 }
 
-CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
+Comms::Comms() : rclcpp::Node("oxebots_comms")
 {
     RCLCPP_INFO(get_logger(), "Starting comms module...");
 
@@ -30,12 +30,12 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
 
     cmd_sub = create_subscription<oxebots_interfaces::msg::RobotCmd>(
       topic, get_parameter("topic_retention").as_int(),
-      std::bind(&CommsNode::HandleCmd, this, std::placeholders::_1));
+      std::bind(&Comms::HandleCmd, this, std::placeholders::_1));
 
     RCLCPP_INFO(get_logger(), "Comms module started");
 }
 
-void CommsNode::HandleCmd(
+void Comms::HandleCmd(
   const oxebots_interfaces::msg::RobotCmd::SharedPtr msg)
 {
     RobotControl robot_control;

@@ -1,6 +1,6 @@
-#include "oxebots_comms/game_receiver_node.hpp"
+#include "oxebots_comms/game_receiver.hpp"
 
-GameReceiverNode::GameReceiverNode(boost::asio::io_context & io_context)
+GameReceiver::GameReceiver(boost::asio::io_context & io_context)
 : rclcpp::Node("oxebots_comms"),
   UdpDriver<SSL_WrapperPacket>(io_context),
   io_context(io_context)
@@ -38,7 +38,7 @@ GameReceiverNode::GameReceiverNode(boost::asio::io_context & io_context)
     RCLCPP_INFO(get_logger(), "Game receiver module started");
 }
 
-GameReceiverNode::~GameReceiverNode()
+GameReceiver::~GameReceiver()
 {
     RCLCPP_INFO(get_logger(), "Stopping game receiver module...");
     io_context.stop();
@@ -46,7 +46,7 @@ GameReceiverNode::~GameReceiverNode()
     stop();
 }
 
-void GameReceiverNode::on_receive(const SSL_WrapperPacket & packet)
+void GameReceiver::on_receive(const SSL_WrapperPacket & packet)
 {
     RCLCPP_DEBUG(get_logger(), "Received packet");
     SSL_DetectionFrame detection = packet.detection();
@@ -105,7 +105,7 @@ void GameReceiverNode::on_receive(const SSL_WrapperPacket & packet)
         PublishRobotData(blue_robots, yellow_robots);
 }
 
-void GameReceiverNode::PublishRobotData(
+void GameReceiver::PublishRobotData(
   std::vector<oxebots_interfaces::msg::RobotGameData> allies,
   std::vector<oxebots_interfaces::msg::RobotGameData> enemies)
 {
@@ -116,18 +116,8 @@ void GameReceiverNode::PublishRobotData(
     robot_publisher->publish(robot_data);
 }
 
-void GameReceiverNode::PublishBallData(
+void GameReceiver::PublishBallData(
   oxebots_interfaces::msg::BallPosition ball_data)
 {
     ball_publisher->publish(ball_data);
-}
-
-int main(int argc, char * argv[])
-{
-    rclcpp::init(argc, argv);
-    boost::asio::io_context io_context;
-
-    rclcpp::spin(std::make_shared<GameReceiverNode>(io_context));
-    rclcpp::shutdown();
-    return 0;
 }
