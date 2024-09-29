@@ -72,8 +72,8 @@ install(
 
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
     find_package(ament_cmake_gtest REQUIRED)
-    set(ament_cmake_lint_FOUND TRUE)
 
     # Fix the gtest target to include the correct file
     ament_add_gtest(${PROJECT_NAME}_game_receiver test/game_receiver_test.cpp src/game_receiver.cpp)
@@ -83,11 +83,9 @@ if(BUILD_TESTING)
     )
     ament_target_dependencies(${PROJECT_NAME}_game_receiver ${REQUIRED_PACKAGES} ${REQUIRED_COMPONENTS})
     target_link_libraries(${PROJECT_NAME}_game_receiver ${Protobuf_LIBRARIES})
-    
 endif()
 
 ament_package()
 
 # Set CMP0115 policy to avoid warnings
 cmake_policy(SET CMP0115 NEW)
-

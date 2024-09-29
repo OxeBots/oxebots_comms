@@ -3,9 +3,10 @@
 <package format="3">
   <name>oxebots_comms</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="ce.cesc01@gmail.com">carlos</maintainer>
-  <license>TODO: License declaration</license>
+  <description>Oxebots SSL robocup league communication package</description>
+  <maintainer email="ce.cesc01@gmail.com">Carlos</maintainer>
+  <maintainer email="erick.suzart@ufba.br">Erick Suzart</maintainer>
+  <license>GPLv3</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>protobuf</build_depend>
