@@ -35,8 +35,8 @@ using boost::asio::ip::address_v4;
 using boost::asio::ip::udp;
 using boost::asio::ip::multicast::join_group;
 using boost::system::error_code;
+using boost::system::system_error;
 using rclcpp::get_logger;
-using std::system_error;
 
 template<typename ProtoMessageType>
 class UdpDriver
