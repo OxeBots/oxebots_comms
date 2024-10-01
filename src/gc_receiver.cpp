@@ -250,4 +250,3 @@ void GCReceiver::PublishGCData(oxebots_interfaces::msg::Referee gc_referee)
 {
     gc_publisher->publish(gc_referee);
 }
-

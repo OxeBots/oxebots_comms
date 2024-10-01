@@ -29,7 +29,7 @@ class GameReceiverTest : public ::testing::Test
 
 TEST_F(GameReceiverTest, TestUdpReceivePublish)
 {
-    //rclcpp::executors::SingleThreadedExecutor executor;
+    // rclcpp::executors::SingleThreadedExecutor executor;
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node_);
     bool message_robot_received = false;
@@ -37,7 +37,7 @@ TEST_F(GameReceiverTest, TestUdpReceivePublish)
 
     SSL_WrapperPacket * data_comp = new SSL_WrapperPacket();
     SSL_DetectionFrame * detection_frame_data = new SSL_DetectionFrame();
-    //Mocking necessary values...
+    // Mocking necessary values...
     detection_frame_data->set_frame_number(1);
     detection_frame_data->set_t_sent(1);
     detection_frame_data->set_t_capture(1);
@@ -77,7 +77,7 @@ TEST_F(GameReceiverTest, TestUdpReceivePublish)
 
     ASSERT_NE(serialized_data_comp, "");
     RCLCPP_INFO(rclcpp::get_logger("test_logger"),
-                 "Serialized data is not empty.");
+                "Serialized data is not empty.");
 
     // Subscription for robot data
     oxebots_interfaces::msg::RobotPosition received_robot_data;
@@ -90,7 +90,7 @@ TEST_F(GameReceiverTest, TestUdpReceivePublish)
             received_robot_data.enemies = msg->enemies;
             message_robot_received = true;
             RCLCPP_INFO(rclcpp::get_logger("test_logger"),
-                         "Robot data received.");
+                        "Robot data received.");
         });
 
     // Subscription for ball data
@@ -105,7 +105,7 @@ TEST_F(GameReceiverTest, TestUdpReceivePublish)
             received_ball_data.z = msg->z;
             message_ball_received = true;
             RCLCPP_INFO(rclcpp::get_logger("test_logger"),
-                         "Ball data received.");
+                        "Ball data received.");
         });
 
     // Simulate UDP message sending
@@ -125,8 +125,7 @@ TEST_F(GameReceiverTest, TestUdpReceivePublish)
       !message_robot_received && !message_ball_received &&
       (std::chrono::steady_clock::now() - start < std::chrono::seconds(5)))
     {
-        RCLCPP_INFO(rclcpp::get_logger("test_logger"),
-                     "Spinning executor...");
+        RCLCPP_INFO(rclcpp::get_logger("test_logger"), "Spinning executor...");
         executor.spin_some();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }

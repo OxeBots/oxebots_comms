@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "oxebots_comms/udp_driver.hpp"
+#include "oxebots_interfaces/msg/vector2f.hpp"
 #include "oxebots_interfaces/msg/game_event_proposal_group.hpp"
 #include "oxebots_interfaces/msg/referee.hpp"
 #include "oxebots_interfaces/ssl_gc_common.pb.h"

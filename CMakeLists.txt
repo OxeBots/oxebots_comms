@@ -75,6 +75,7 @@ if(BUILD_TESTING)
     set(ament_cmake_lint_FOUND TRUE)
 
     # Fix the gtest target to include the correct file
+
     ament_add_gtest(${PROJECT_NAME}_game_receiver test/game_receiver_test.cpp src/game_receiver.cpp)
     target_include_directories(${PROJECT_NAME}_game_receiver PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
