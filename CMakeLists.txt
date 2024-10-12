@@ -39,6 +39,7 @@ include_directories(
 set(NODES
     sender_node "src/sender.cpp src/robot_data_sender.cpp"
     gc_receiver_node "src/gc_receiver.cpp"
+    game_receiver_node "src/game_receiver.cpp src/composition.cpp"
 )
 
 # Macro for adding executable nodes
