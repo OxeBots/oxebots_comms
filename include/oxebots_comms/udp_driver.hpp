@@ -43,7 +43,7 @@ class UdpDriver
 {
 public:
   UdpDriver(
-    const std::string & multicast_address, uint16_t port,
+    const std::string & ip_address, uint16_t port,
     const std::string & interface_address = "");
 
   virtual ~UdpDriver();
@@ -69,30 +69,36 @@ private:
 
 template<typename ProtoMessageType>
 UdpDriver<ProtoMessageType>::UdpDriver(
-  const std::string & multicast_address, uint16_t port, const std::string & interface_address)
+  const std::string & ip_address, uint16_t port, const std::string & interface_address)
 : io_context_(), socket_(io_context_)
 {
   try {
-    const auto addr = address::from_string(multicast_address).to_v4();
+    const auto addr = address::from_string(ip_address);
     endpoint_ = udp::endpoint(addr, port);
 
     socket_.open(endpoint_.protocol());
     socket_.set_option(udp::socket::reuse_address(true));
     socket_.bind(endpoint_);
 
-    auto iface_addr = address_v4::any();
+    if (addr.is_multicast()) {
+      RCLCPP_INFO(
+        rclcpp::get_logger("UdpDriver"), "Using multicast address: %s",
+        ip_address.c_str());
 
-    if (interface_address.empty()) {
-      socket_.set_option(join_group(addr, iface_addr));
+      auto iface_addr = address_v4::any();
 
+      if (!interface_address.empty()) {
+        iface_addr = address::from_string(interface_address).to_v4();
+      }
+
+      socket_.set_option(join_group(addr.to_v4(), iface_addr));
+
+      RCLCPP_INFO(
+        rclcpp::get_logger("UdpDriver"), "Joined multicast group: %s on interface: %s",
+        ip_address.c_str(), iface_addr.to_string().c_str());
     } else {
-      iface_addr = address::from_string(interface_address).to_v4();
-      socket_.set_option(join_group(addr, iface_addr));
+      RCLCPP_INFO(rclcpp::get_logger("UdpDriver"), "Using unicast address: %s", ip_address.c_str());
     }
-
-    RCLCPP_INFO(
-      rclcpp::get_logger("UdpDriver"), "Bound to %s:%d from %s", multicast_address.c_str(), port,
-      iface_addr.to_string().c_str());
 
     start_receive();
 

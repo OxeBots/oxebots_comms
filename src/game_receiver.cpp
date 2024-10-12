@@ -24,9 +24,9 @@ GameReceiver::GameReceiver()
 {
   RCLCPP_INFO(get_logger(), "Starting game receiver module...");
 
+  declare_parameter("topic_retention", 10);
   declare_parameter("robot_topic", "robot_data");
   declare_parameter("ball_topic", "ball_data");
-  declare_parameter("topic_retention", 10);
   declare_parameter("is_yellow_team", false);
 
   robot_publisher = create_publisher<oxebots_interfaces::msg::RobotPosition>(

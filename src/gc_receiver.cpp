@@ -23,7 +23,6 @@ GCReceiver::GCReceiver()
     declare_parameter<std::string>("interface_ip", ""))
 {
   declare_parameter("topic_retention", 10);
-  declare_parameter("is_team_info", false);
   declare_parameter("gc_topic_name", "gc_data");
 
   gc_publisher = create_publisher<oxebots_interfaces::msg::Referee>(
