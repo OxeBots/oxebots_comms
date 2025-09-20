@@ -15,12 +15,12 @@ class RobotDataSender
 {
    private:
     int socket_fd;
-    struct sockaddr_in server_address;
     std::string host;
     int port;
 
-   public:
+    public:
+    struct sockaddr_in server_address;
     RobotDataSender(std::string host, int port);
     ~RobotDataSender();
-    void SendControl(RobotControl control);
+    bool SendControl(RobotControl control);
 };

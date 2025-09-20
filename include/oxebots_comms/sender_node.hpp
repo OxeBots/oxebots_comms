@@ -11,14 +11,14 @@
 class CommsNode : public rclcpp::Node
 {
    private:
-    RobotDataSender * data_sender;
-    std::vector<RobotCommand> proto_command_list;
-    int robot_list_size;
-
-    rclcpp::Subscription<oxebots_interfaces::msg::RobotCmd>::SharedPtr cmd_sub;
-
-    void HandleCmd(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg);
-
+   std::vector<RobotCommand> proto_command_list;
+   int robot_list_size;
+   
+   rclcpp::Subscription<oxebots_interfaces::msg::RobotCmd>::SharedPtr cmd_sub;
+   
+   void HandleCmd(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg);
+   
    public:
+    std::unique_ptr<RobotDataSender> data_sender; // Depois privar
     CommsNode();
 };
