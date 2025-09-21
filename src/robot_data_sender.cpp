@@ -3,11 +3,9 @@
 RobotDataSender::RobotDataSender(std::string host, int port)
 {
     this->socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (this->socket_fd < 0)
-    {
+    if (this->socket_fd < 0) {
         exit(EXIT_FAILURE);
     }
-
     memset(&this->server_address, 0, sizeof(this->server_address));
     this->server_address.sin_family = AF_INET;
     this->server_address.sin_port = htons(port);
@@ -15,23 +13,21 @@ RobotDataSender::RobotDataSender(std::string host, int port)
     {
         exit(EXIT_FAILURE);
     }
+    if (connect(this->socket_fd, (struct sockaddr *)&this->server_address, sizeof(this->server_address)) < 0) {
+        exit(EXIT_FAILURE);
+    }
 }
 
 RobotDataSender::~RobotDataSender() { close(socket_fd); }
 
-bool RobotDataSender::SendControl(RobotControl control)
+bool  RobotDataSender::SendControl(RobotControl control)
 {
     std::string data_pkt;
     if (!control.SerializeToString(&data_pkt))
     {
-        // exit(EXIT_FAILURE);
         return false;
     }
-
-    if (sendto(this->socket_fd, data_pkt.c_str(), data_pkt.size(), 0,
-               (struct sockaddr *)&this->server_address, sizeof(this->server_address)) < 0)
-    {
-        // exit(EXIT_FAILURE);
+    if (send(this->socket_fd, data_pkt.c_str(), data_pkt.size(), 0) < 0) {
         return false;
     }
     return true;

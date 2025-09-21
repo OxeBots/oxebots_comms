@@ -23,8 +23,10 @@ CommsNode::CommsNode() : rclcpp::Node("oxebots_comms")
 
     RCLCPP_DEBUG(get_logger(), "Creating RobotDataSender");
     RCLCPP_INFO(get_logger(), "Creating RobotDataSender");
-    data_sender = std::make_unique<RobotDataSender>(get_parameter("host").as_string(),
-                                      get_parameter("port").as_int());
+    std::string host = get_parameter("host").as_string();
+    int port = get_parameter("port").as_int();
+    
+    data_sender = std::make_unique<RobotDataSender>(host,port);
 
     RCLCPP_INFO(get_logger(), "Create addr: %s port: %u",
                 inet_ntoa(data_sender->server_address.sin_addr),
@@ -75,5 +77,8 @@ void CommsNode::HandleCmd(
     {
         RCLCPP_INFO(get_logger(), "Falha ao enviar o pacote de controle do robô!");
         // Aqui você pode decidir o que fazer, como tentar de novo ou apenas ignorar.
+    }
+    else{
+        RCLCPP_INFO(get_logger(), "Pacote de controle do robô enviado com sucesso!");
     }
 }
