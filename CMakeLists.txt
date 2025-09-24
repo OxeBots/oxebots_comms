@@ -9,7 +9,6 @@ if(NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 17)
 endif()
 
-# Required packages
 set(REQUIRED_PACKAGES
     ament_cmake
     oxebots_interfaces
@@ -36,9 +35,9 @@ include_directories(
 
 # list that associates the node name with the source files
 set(NODES
-    sender_node "src/sender_node.cpp src/robot_data_sender.cpp"
-    game_receiver_node "src/game_receiver_node.cpp"
-    gc_receiver_node "src/gc_receiver_node.cpp"
+    gc_receiver_node "src/gc_receiver.cpp"
+    game_receiver_node "src/game_receiver.cpp"
+    grSim_controller_node "src/grSim_controller.cpp"
 )
 
 # Macro for adding executable nodes
