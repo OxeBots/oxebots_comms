@@ -29,6 +29,7 @@
 #include "oxebots_interfaces/msg/ball_position.hpp"
 #include "oxebots_interfaces/msg/robot_game_data.hpp"
 #include "oxebots_interfaces/msg/robot_position.hpp"
+#include "oxebots_interfaces/msg/ssl_geometry_data.hpp"
 
 class GameReceiver : public rclcpp::Node, public UdpReceiver<SSL_WrapperPacket>
 {
@@ -36,6 +37,8 @@ class GameReceiver : public rclcpp::Node, public UdpReceiver<SSL_WrapperPacket>
     rclcpp::Publisher<oxebots_interfaces::msg::RobotPosition>::SharedPtr robot_publisher;
 
     rclcpp::Publisher<oxebots_interfaces::msg::BallPosition>::SharedPtr ball_publisher;
+
+    rclcpp::Publisher<oxebots_interfaces::msg::SSLGeometryData>::SharedPtr geometry_publisher;
 
     bool is_yellow_team;
 
@@ -52,4 +55,6 @@ class GameReceiver : public rclcpp::Node, public UdpReceiver<SSL_WrapperPacket>
                           std::vector<oxebots_interfaces::msg::RobotGameData> enemies);
 
     void PublishBallData(oxebots_interfaces::msg::BallPosition ball_data);
+
+    void PublishGeometryData(const SSL_GeometryData & geometry);
 };
