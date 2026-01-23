@@ -141,9 +141,8 @@ void UdpReceiver<ProtoMessageType>::handle_receive(const error_code & error, std
 {
     if (!error || error == message_size)
     {
-        if (packet_.ParseFromArray(data_.data(), bytes_transferred)){
+        if (packet_.ParseFromArray(data_.data(), bytes_transferred))
             on_receive(packet_);
-        }
         else
             RCLCPP_ERROR(get_logger("UdpReceiver::handle_receive"), "Failed to parse packet.");
     }
