@@ -13,29 +13,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
 #pragma once
 
-#include <arpa/inet.h>
-#include <oxebots_interfaces/ssl_simulation_robot_control.pb.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#include <ssl_simulation_robot_control.pb.h>
 
-#include <cstdlib>
-#include <iostream>
-#include <string>
+#include <vector>
 
 #include <rclcpp/rclcpp.hpp>
 
-class RobotDataSender
+#include "oxebots_interfaces/msg/robot_cmd.hpp"
+#include "oxebots_interfaces/msg/robot_cmd_data.hpp"
+#include "robot_data_sender.hpp"
+
+class Comms : public rclcpp::Node
 {
 private:
-  int socket_fd;
-  struct sockaddr_in server_address;
-  std::string host;
-  int port;
+  RobotDataSender * data_sender;
+  std::vector<RobotCommand> proto_command_list;
+  int robot_list_size;
+
+  rclcpp::Subscription<oxebots_interfaces::msg::RobotCmd>::SharedPtr cmd_sub;
+
+  void HandleCmd(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg);
 
 public:
-  RobotDataSender(std::string host, int port);
-  ~RobotDataSender();
-  void SendControl(RobotControl control);
+  Comms();
 };

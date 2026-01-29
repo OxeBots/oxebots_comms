@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.8)
 project(oxebots_comms)
 
@@ -36,9 +37,9 @@ include_directories(
 
 # list that associates the node name with the source files
 set(NODES
-    sender_node "src/sender_node.cpp src/robot_data_sender.cpp"
-    game_receiver_node "src/game_receiver_node.cpp"
-    gc_receiver_node "src/gc_receiver_node.cpp"
+    sender_node "src/sender.cpp src/robot_data_sender.cpp"
+    gc_receiver_node "src/gc_receiver.cpp"
+    game_receiver_node "src/game_receiver.cpp src/composition.cpp"
 )
 
 # Macro for adding executable nodes
@@ -60,6 +61,11 @@ foreach(i RANGE 0 ${last_index} 2)
     add_node(${node_name} ${node_srcs})
 endforeach()
 
+add_executable(comms_composition src/composition.cpp src/game_receiver.cpp)
+ament_target_dependencies(comms_composition ${REQUIRED_PACKAGES} ${REQUIRED_COMPONENTS})
+target_link_libraries(comms_composition ${Protobuf_LIBRARIES})
+install(TARGETS comms_composition DESTINATION lib/${PROJECT_NAME})
+
 install(
     DIRECTORY include/
     DESTINATION include
@@ -67,9 +73,20 @@ install(
 
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
-    set(ament_cmake_copyright_FOUND TRUE)
-    set(ament_cmake_cpplint_FOUND TRUE)
     ament_lint_auto_find_test_dependencies()
+    find_package(ament_cmake_gtest REQUIRED)
+
+    # Fix the gtest target to include the correct file
+    ament_add_gtest(${PROJECT_NAME}_game_receiver test/game_receiver_test.cpp src/game_receiver.cpp)
+    target_include_directories(${PROJECT_NAME}_game_receiver PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:include>
+    )
+    ament_target_dependencies(${PROJECT_NAME}_game_receiver ${REQUIRED_PACKAGES} ${REQUIRED_COMPONENTS})
+    target_link_libraries(${PROJECT_NAME}_game_receiver ${Protobuf_LIBRARIES})
 endif()
 
 ament_package()
+
+# Set CMP0115 policy to avoid warnings
+cmake_policy(SET CMP0115 NEW)

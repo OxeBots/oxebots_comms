@@ -1,0 +1,35 @@
+name: lint-runner
+
+on: [pull_request, workflow_dispatch]
+
+env:
+  AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS: true
+
+jobs:
+  ament_lint_general:
+    name: ament_${{ matrix.linter }}
+    strategy:
+      fail-fast: false
+      matrix:
+        linter:
+          [copyright, cppcheck, cpplint, lint_cmake, uncrustify, xmllint]
+        distro: [humble]
+        ubuntu: [jammy]
+        package: [oxebots_comms]
+    runs-on: [self-hosted, linux, x64]
+    container:
+      image: rostooling/setup-ros-docker:ubuntu-${{ matrix.ubuntu }}-latest
+    steps:
+      - if: ${{ matrix.linter == 'cpplint' || matrix.linter == 'uncrustify' }}
+        name: Set env ${{ matrix.linter }}
+        run: |
+          echo "LINT_ARGUMENTS=--linelength=100" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v4
+      - uses: ros-tooling/setup-ros@0.7.4
+      - uses: ros-tooling/action-ros-lint@master
+        with:
+          linter: ${{ matrix.linter }}
+          distribution: ${{ matrix.distro }}
+          package-name: ${{ matrix.package }}
+          arguments: ${{ env.LINT_ARGUMENTS }}

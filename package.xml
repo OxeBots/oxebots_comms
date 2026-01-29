@@ -6,6 +6,7 @@
   <description>Oxebots SSL robocup league communication package</description>
   <maintainer email="ce.cesc01@gmail.com">Carlos</maintainer>
   <maintainer email="erick.suzart@ufba.br">Erick Suzart</maintainer>
+  <license>GPLv3</license>
 
   <license>GPL-3.0 license</license>
 
@@ -19,10 +20,12 @@
   <depend>python3-lark-parser</depend>
   <depend>python3-numpy</depend>
   <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>geometry_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

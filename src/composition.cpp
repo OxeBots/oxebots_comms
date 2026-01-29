@@ -13,29 +13,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
-
-#include <arpa/inet.h>
-#include <oxebots_interfaces/ssl_simulation_robot_control.pb.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
-#include <cstdlib>
-#include <iostream>
-#include <string>
-
 #include <rclcpp/rclcpp.hpp>
 
-class RobotDataSender
-{
-private:
-  int socket_fd;
-  struct sockaddr_in server_address;
-  std::string host;
-  int port;
+#include "oxebots_comms/game_receiver.hpp"
 
-public:
-  RobotDataSender(std::string host, int port);
-  ~RobotDataSender();
-  void SendControl(RobotControl control);
-};
+int main(int argc, char ** argv)
+{
+  rclcpp::init(argc, argv);
+  auto game_receiver = std::make_shared<GameReceiver>();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(game_receiver);
+  executor.spin();
+  rclcpp::shutdown();
+  return 0;
+}
