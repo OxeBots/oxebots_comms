@@ -16,7 +16,7 @@ jobs:
         distro: [humble]
         ubuntu: [jammy]
         package: [oxebots_comms]
-    runs-on: [self-hosted, colcon-hosted, linux, x64]
+    runs-on: [self-hosted, linux, x64]
     container:
       image: rostooling/setup-ros-docker:ubuntu-${{ matrix.ubuntu }}-latest
     steps:
