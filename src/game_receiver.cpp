@@ -213,6 +213,7 @@ void GameReceiver::on_receive(const SSL_WrapperPacket & packet)
         PublishRobotData(blue_robots, yellow_robots);
     
     if (packet.has_geometry()) {
+        RCLCPP_INFO_ONCE(get_logger(), "Geometria do campo recebida!");
         PublishGeometryData(packet.geometry());
     }
 }
