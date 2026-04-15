@@ -21,10 +21,19 @@ GrSimController::GrSimController() : rclcpp::Node("grSim_controller_node")
 
     // Declare parameters
     const std::string simulator_ip = declare_parameter<std::string>("simulator_ip", "127.0.0.1");
-    const int simulator_port = declare_parameter<int>("simulator_port", 10301);
+    int simulator_port = declare_parameter<int>("simulator_port", 10301);
     const std::string interface_ip = declare_parameter<std::string>("interface_ip", "");
     is_yellow_team_ = declare_parameter<bool>("is_yellow_team", false);
     const std::string command_topic = declare_parameter<std::string>("command_topic", "robot_commands");
+
+    // Lógica automática para as portas do grSim: Blue=10301, Yellow=10302
+    if (is_yellow_team_ && simulator_port == 10301) {
+        RCLCPP_INFO(get_logger(), "Time amarelo detectado. Ajustando porta para 10302 automaticamente.");
+        simulator_port = 10302;
+    } else if (!is_yellow_team_ && simulator_port == 10302) {
+        RCLCPP_INFO(get_logger(), "Time azul detectado. Ajustando porta para 10301 automaticamente.");
+        simulator_port = 10301;
+    }
 
     udp_sender_ = std::make_unique<UdpSender<RobotControl>>(simulator_ip, static_cast<uint16_t>(simulator_port), interface_ip);
 
@@ -46,7 +55,11 @@ void GrSimController::command_callback(const oxebots_interfaces::msg::RobotCmd::
 
     for (const auto & robot_command_data : msg->robots)
     {
-        RCLCPP_DEBUG(rclcpp::get_logger("GrSimController"), "Adding robot_command for id %d", robot_command_data.id);
+        // Log para debug (aparecerá a cada 1 segundo para não poluir)
+        RCLCPP_INFO_THROTTLE(rclcpp::get_logger("GrSimController"), *this->get_clock(), 1000, 
+                             "Comando recebido para Robô %d: vx=%.2f, vy=%.2f, w=%.2f", 
+                             robot_command_data.id, robot_command_data.x_velocity, 
+                             robot_command_data.y_velocity, robot_command_data.angular_velocity);
 
         auto * robot_cmd = packet.add_robot_commands();
 
