@@ -20,23 +20,19 @@ GrSimController::GrSimController() : rclcpp::Node("grSim_controller_node")
     RCLCPP_INFO(rclcpp::get_logger("GrSimController"), "Starting grSim controller module...");
 
     // Declare parameters
-    declare_parameter("simulator_ip", "127.0.0.1");
-    declare_parameter("simulator_port", 10301);
-    declare_parameter("is_yellow_team", false);
-    declare_parameter("command_topic", "robot_commands");
+    const std::string simulator_ip = declare_parameter<std::string>("simulator_ip", "127.0.0.1");
+    const int simulator_port = declare_parameter<int>("simulator_port", 10301);
+    const std::string interface_ip = declare_parameter<std::string>("interface_ip", "");
+    is_yellow_team_ = declare_parameter<bool>("is_yellow_team", false);
+    const std::string command_topic = declare_parameter<std::string>("command_topic", "robot_commands");
 
-    auto simulator_ip = get_parameter("simulator_ip").as_string();
-    auto simulator_port = get_parameter("simulator_port").as_int();
-    is_yellow_team_ = get_parameter("is_yellow_team").as_bool();
-    auto command_topic = get_parameter("command_topic").as_string();
-
-    udp_sender_ = std::make_unique<UdpSender<RobotControl>>(simulator_ip, simulator_port);
+    udp_sender_ = std::make_unique<UdpSender<RobotControl>>(simulator_ip, static_cast<uint16_t>(simulator_port), interface_ip);
 
     // Create subscription for robot commands
     command_subscription_ = create_subscription<oxebots_interfaces::msg::RobotCmd>(
       command_topic, 10, std::bind(&GrSimController::command_callback, this, std::placeholders::_1));
 
-    RCLCPP_INFO(rclcpp::get_logger("GrSimController"), "Game sender module started, sending to %s:%lu as %s team",
+    RCLCPP_INFO(rclcpp::get_logger("GrSimController"), "Game sender module started, sending to %s:%d as %s team",
                 simulator_ip.c_str(), simulator_port, is_yellow_team_ ? "yellow" : "blue");
 }
 
@@ -62,7 +58,7 @@ void GrSimController::command_callback(const oxebots_interfaces::msg::RobotCmd::
         auto * move_cmd = robot_cmd->mutable_move_command();
         auto * global_velocity = move_cmd->mutable_global_velocity();
 
-        // Set wheel velocities
+        // Set GLOBAL velocities as requested
         global_velocity->set_x(robot_command_data.x_velocity);
         global_velocity->set_y(robot_command_data.y_velocity);
         global_velocity->set_angular(robot_command_data.angular_velocity);
@@ -70,8 +66,6 @@ void GrSimController::command_callback(const oxebots_interfaces::msg::RobotCmd::
 
     if (packet.robot_commands_size() > 0)
     {
-        RCLCPP_DEBUG(rclcpp::get_logger("GrSimController"), "Sending control packet...\n---\n%s\n---",
-                     packet.DebugString().c_str());
         udp_sender_->send(packet);
     }
 }

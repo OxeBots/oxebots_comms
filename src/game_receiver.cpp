@@ -125,8 +125,8 @@ oxebots_interfaces::msg::SSLGeometryModels map_to_ros(const SSL_GeometryModels& 
 
 GameReceiver::GameReceiver()
 : rclcpp::Node("game_receiver_node"),
-  UdpReceiver<SSL_WrapperPacket>(declare_parameter<std::string>("ssl_vision_ip", "224.5.23.2"),
-                                 declare_parameter<uint16_t>("ssl_vision_port", 10006),
+  UdpReceiver<SSL_WrapperPacket>(declare_parameter<std::string>("ssl_vision_ip", "127.0.0.1"),
+                                 declare_parameter<int>("ssl_vision_port", 10020),
                                  declare_parameter<std::string>("interface_ip", ""))
 {
     RCLCPP_INFO(rclcpp::get_logger("GameReceiver"), "Starting game receiver module...");

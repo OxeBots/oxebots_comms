@@ -18,7 +18,7 @@
 GCReceiver::GCReceiver()
 : rclcpp::Node("gc_receiver_node"),
   UdpReceiver<Referee>(declare_parameter<std::string>("referee_ip", "224.5.23.1"),
-                       declare_parameter<uint16_t>("referee_port", 10003),
+                       declare_parameter<int>("referee_port", 10003),
                        declare_parameter<std::string>("interface_ip", ""))
 {
     declare_parameter("topic_retention", 10);

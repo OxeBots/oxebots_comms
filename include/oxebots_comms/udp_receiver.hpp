@@ -24,6 +24,9 @@
 
 #include <iostream>
 #include <string>
+#include <thread>
+#include <array>
+#include <vector>
 
 #include "rclcpp/logging.hpp"
 
@@ -42,7 +45,7 @@ template <typename ProtoMessageType>
 class UdpReceiver
 {
    public:
-    UdpReceiver(const std::string & ip_address, uint16_t port, const std::string & interface_address = "");
+    UdpReceiver(const std::string & ip_address, int port, const std::string & interface_address = "");
 
     virtual ~UdpReceiver();
 
@@ -66,22 +69,24 @@ class UdpReceiver
 };
 
 template <typename ProtoMessageType>
-UdpReceiver<ProtoMessageType>::UdpReceiver(const std::string & ip_address, uint16_t port,
+UdpReceiver<ProtoMessageType>::UdpReceiver(const std::string & ip_address, int port,
                                            const std::string & interface_address)
 : io_context_(), socket_(io_context_)
 {
     try
     {
         const auto addr = address::from_string(ip_address);
-        endpoint_ = udp::endpoint(addr, port);
+        endpoint_ = udp::endpoint(addr, static_cast<uint16_t>(port));
 
         socket_.open(endpoint_.protocol());
         socket_.set_option(udp::socket::reuse_address(true));
-        socket_.bind(endpoint_);
 
         if (addr.is_multicast())
         {
             RCLCPP_INFO(rclcpp::get_logger("UdpReceiver"), "Using multicast address: %s", ip_address.c_str());
+
+            // For multicast, bind to ANY address to receive on all interfaces
+            socket_.bind(udp::endpoint(udp::v4(), static_cast<uint16_t>(port)));
 
             auto iface_addr = address_v4::any();
 
@@ -94,7 +99,10 @@ UdpReceiver<ProtoMessageType>::UdpReceiver(const std::string & ip_address, uint1
                         ip_address.c_str(), iface_addr.to_string().c_str());
         }
         else
+        {
             RCLCPP_INFO(rclcpp::get_logger("UdpReceiver"), "Using unicast address: %s", ip_address.c_str());
+            socket_.bind(endpoint_);
+        }
 
         start_receive();
 
