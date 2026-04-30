@@ -35,8 +35,8 @@ include_directories(
 
 # list that associates the node name with the source files
 set(NODES
-    gc_receiver_node "src/gc_receiver.cpp"
-    game_receiver_node "src/game_receiver.cpp"
+    # gc_receiver_node "src/gc_receiver.cpp"
+    # game_receiver_node "src/game_receiver.cpp"
     grSim_controller_node "src/grSim_controller.cpp"
 )
 
