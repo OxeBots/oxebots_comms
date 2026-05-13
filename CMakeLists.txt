@@ -38,6 +38,7 @@ set(NODES
     # gc_receiver_node "src/gc_receiver.cpp"
     # game_receiver_node "src/game_receiver.cpp"
     grSim_controller_node "src/grSim_controller.cpp"
+    ra_controller_node "src/ra_controller.cpp"
 )
 
 # Macro for adding executable nodes
