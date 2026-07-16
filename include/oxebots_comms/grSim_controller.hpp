@@ -22,14 +22,25 @@
 
 #include "oxebots_comms/udp_sender.hpp"
 #include "oxebots_interfaces/msg/robot_cmd.hpp"
+#include "oxebots_interfaces/msg/game_data.hpp"
 #include "oxebots_interfaces/ssl_simulation_robot_control.pb.h"
 
 class GrSimController : public rclcpp::Node
 {
    private:
+    struct RobotState {
+        float x = 0.0f;
+        float y = 0.0f;
+        float orientation = 0.0f;
+    };
+
     std::unique_ptr<UdpSender<RobotControl>> udp_sender_;
     rclcpp::Subscription<oxebots_interfaces::msg::RobotCmd>::SharedPtr command_subscription_;
+    rclcpp::Subscription<oxebots_interfaces::msg::GameData>::SharedPtr game_data_subscription_;
     bool is_yellow_team_;
+    std::map<uint32_t, RobotState> robot_states_;
+
+    void clampVelocities(uint32_t robot_id, float& vx, float& vy);
 
    public:
     GrSimController();
@@ -38,4 +49,5 @@ class GrSimController : public rclcpp::Node
 
    private:
     void command_callback(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg);
+    void game_data_callback(const oxebots_interfaces::msg::GameData::SharedPtr msg);
 };

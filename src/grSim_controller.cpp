@@ -41,6 +41,10 @@ GrSimController::GrSimController() : rclcpp::Node("grSim_controller_node")
     command_subscription_ = create_subscription<oxebots_interfaces::msg::RobotCmd>(
       command_topic, 10, std::bind(&GrSimController::command_callback, this, std::placeholders::_1));
 
+    // Create subscription for game data
+    game_data_subscription_ = create_subscription<oxebots_interfaces::msg::GameData>(
+      "game_data", 10, std::bind(&GrSimController::game_data_callback, this, std::placeholders::_1));
+
     RCLCPP_INFO(rclcpp::get_logger("GrSimController"), "Game sender module started, sending to %s:%d as %s team",
                 simulator_ip.c_str(), simulator_port, is_yellow_team_ ? "yellow" : "blue");
 }
@@ -71,15 +75,86 @@ void GrSimController::command_callback(const oxebots_interfaces::msg::RobotCmd::
         auto * move_cmd = robot_cmd->mutable_move_command();
         auto * global_velocity = move_cmd->mutable_global_velocity();
 
-        // Set GLOBAL velocities as requested
-        global_velocity->set_x(robot_command_data.x_velocity);
-        global_velocity->set_y(robot_command_data.y_velocity);
+        float vx = robot_command_data.x_velocity;
+        float vy = robot_command_data.y_velocity;
+
+        clampVelocities(robot_command_data.id, vx, vy);
+
+        // Set GLOBAL velocities as requested (clamped)
+        global_velocity->set_x(vx);
+        global_velocity->set_y(vy);
         global_velocity->set_angular(robot_command_data.angular_velocity);
     }
 
     if (packet.robot_commands_size() > 0)
     {
         udp_sender_->send(packet);
+    }
+}
+
+void GrSimController::game_data_callback(const oxebots_interfaces::msg::GameData::SharedPtr msg)
+{
+    // Update states for our team (allies)
+    for (const auto & robot : msg->robots.allies)
+    {
+        robot_states_[robot.id] = RobotState{robot.x, robot.y, robot.orientation};
+    }
+}
+
+void GrSimController::clampVelocities(uint32_t robot_id, float& vx, float& vy) {
+    (void)vy;
+    if (robot_states_.find(robot_id) == robot_states_.end()) {
+        return; // Don't know where the robot is, can't clamp
+    }
+    const auto& state = robot_states_[robot_id];
+    float rx = state.x;
+    float ry = state.y;
+
+    // Penalty Area Dimensions in mm (with safety margin)
+    // Goal line is around 2200mm. Penalty area is 500mm deep, 1350mm wide.
+    // Safety margin of 110mm (robot radius 90mm + 20mm extra tolerance)
+    float area_x_limit = 2200.0f - 500.0f - 110.0f; // 1590 mm
+    float area_y_limit = (1350.0f / 2.0f) + 110.0f; // 785 mm
+
+    bool block_positive = true;
+    bool block_negative = true;
+
+    if (robot_id == 0) {
+        // Goalkeeper is allowed in its own area, but not the opponent's.
+        // We determine its own area by which side it is currently on.
+        if (rx > 0.0f) {
+            block_positive = false; // own side is positive
+        } else {
+            block_negative = false; // own side is negative
+        }
+    }
+
+    // 1. Block positive area (X > area_x_limit, |Y| < area_y_limit)
+    if (block_positive) {
+        // If robot is in/near the area and moving deeper
+        if (rx >= area_x_limit && std::abs(ry) < area_y_limit) {
+            if (vx > 0.0f) {
+                vx = 0.0f;
+            }
+            // If the robot is already pushed too deep into the area, apply a gentle push back
+            if (rx > (area_x_limit + 30.0f)) {
+                vx = -0.3f;
+            }
+        }
+    }
+
+    // 2. Block negative area (X < -area_x_limit, |Y| < area_y_limit)
+    if (block_negative) {
+        // If robot is in/near the area and moving deeper
+        if (rx <= -area_x_limit && std::abs(ry) < area_y_limit) {
+            if (vx < 0.0f) {
+                vx = 0.0f;
+            }
+            // If the robot is already pushed too deep into the area, apply a gentle push back
+            if (rx < -(area_x_limit + 30.0f)) {
+                vx = 0.3f;
+            }
+        }
     }
 }
 

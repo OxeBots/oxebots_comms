@@ -29,12 +29,21 @@
 class RAController : public rclcpp::Node
 {
    private:
+    struct RobotState {
+        float x = 0.0f;
+        float y = 0.0f;
+        float orientation = 0.0f;
+    };
+
     std::unique_ptr<UdpSender<RobotControl>> udp_sender_;
     rclcpp::Subscription<oxebots_interfaces::msg::RobotCmd>::SharedPtr command_subscription_;
     rclcpp::Subscription<oxebots_interfaces::msg::GameData>::SharedPtr game_data_subscription_;
     
     bool is_yellow_team_;
     std::map<uint32_t, float> robot_orientations_;
+    std::map<uint32_t, RobotState> robot_states_;
+
+    void clampVelocities(uint32_t robot_id, float& vx, float& vy);
 
    public:
     RAController();
