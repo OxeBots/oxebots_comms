@@ -10,15 +10,15 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 set(REQUIRED_PACKAGES
-    ament_cmake
-    oxebots_interfaces
-    Protobuf
-    rclcpp
-    geometry_msgs
+        ament_cmake
+        oxebots_interfaces
+        Protobuf
+        rclcpp
+        geometry_msgs
 )
 
 set(REQUIRED_COMPONENTS
-    Boost
+        Boost
 )
 
 foreach(pkg IN LISTS REQUIRED_PACKAGES)
@@ -30,15 +30,15 @@ foreach(pkg IN LISTS REQUIRED_COMPONENTS)
 endforeach()
 
 include_directories(
-    include
+        include
 )
 
 # list that associates the node name with the source files
 set(NODES
-    # gc_receiver_node "src/gc_receiver.cpp"
-    # game_receiver_node "src/game_receiver.cpp"
-    grSim_controller_node "src/grSim_controller.cpp"
-    ra_controller_node "src/ra_controller.cpp"
+        # gc_receiver_node "src/gc_receiver.cpp"
+        # game_receiver_node "src/game_receiver.cpp"
+        grSim_controller_node "src/grSim_controller.cpp"
+        ra_controller_node "src/ra_controller.cpp"
 )
 
 # Macro for adding executable nodes
@@ -60,9 +60,19 @@ foreach(i RANGE 0 ${last_index} 2)
     add_node(${node_name} ${node_srcs})
 endforeach()
 
+install(PROGRAMS
+        scripts/Adapt.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
 install(
-    DIRECTORY include/
-    DESTINATION include
+        DIRECTORY include/
+        DESTINATION include
+)
+
+install(
+        DIRECTORY scripts/proto
+        DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

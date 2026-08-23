@@ -1,0 +1,161 @@
+// ssl_robot_protocol.bitproto
+// Multi-robot SSL protocol with message multiplexing, robot addressing, and config support.
+// Base station sends RobotCommand or RobotConfig; robot replies with RobotTelemetry (unicast only).
+
+proto ssl_robot_protocol;
+
+// ---------------------------------------------------------------------------
+// Scalar type aliases
+// ---------------------------------------------------------------------------
+
+// Timestamp in milliseconds (uint32 covers ~49 days at 1ms resolution)
+type Timestamp = uint32;
+
+// Scaled position: millimeters from origin (range ±32.767 m)
+type PositionScaled = int16;
+
+// Scaled angle: 0.01 degree per unit (range ±327.67°)
+type AngleScaled = int16;
+
+// Scaled linear velocity: 1 mm/s per unit (range ±32.767 m/s)
+type LinearVelocityScaled = int16;
+
+// Scaled angular velocity: 0.01 rad/s per unit (range ±327.67 rad/s)
+type AngularVelocityScaled = int16;
+
+// ---------------------------------------------------------------------------
+// Robot ID constants
+// ---------------------------------------------------------------------------
+
+// Maximum valid robot ID (11 robots: IDs 0–10)
+const ROBOT_ID_MAX = 10;
+
+// IDs 11 - 14 are reserved for future use
+
+// Broadcast address — all robots execute, none reply
+const ROBOT_ID_BROADCAST = 15;
+
+// ---------------------------------------------------------------------------
+// Message type constants (used in msg_type field of every outbound message)
+// ---------------------------------------------------------------------------
+
+// Motion command from base station to a specific robot or broadcast
+const MSG_TYPE_COMMAND = 0;
+
+// Configuration command (set ID, run calibration, etc.)
+const MSG_TYPE_CONFIG = 1;
+
+// Telemetry response from robot back to base station
+const MSG_TYPE_TELEMETRY = 2;
+
+// ---------------------------------------------------------------------------
+// Config flag constants (bitmask for config_flags field in RobotConfig)
+// ---------------------------------------------------------------------------
+
+// Assign a new robot ID (new ID provided in robot_id field of RobotConfig)
+const CONFIG_FLAG_SET_ID = 1;
+
+// Trigger the wheel encoder calibration routine on the robot
+const CONFIG_FLAG_RUN_CALIBRATION = 2;
+
+// Trigger magnetometer calibration only
+const CONFIG_FLAG_CALIBRATE_MAG = 4;
+
+// Reset all NVS-stored configuration to factory defaults
+const CONFIG_FLAG_RESET_NVS = 8;
+
+// Full NVS erase — all namespaces, all keys
+const CONFIG_FLAG_FACTORY_RESET = 16;
+
+// ---------------------------------------------------------------------------
+// Error flag constants (bitmask for error_flags field in RobotTelemetry)
+// ---------------------------------------------------------------------------
+
+// Bit 0:  Communication loss with base station
+const ERROR_COMM_LOSS         = 1;
+// Bit 1:  IMU failure
+const ERROR_IMU_FAIL          = 2;
+// Bit 2:  TOF sensor failure
+const ERROR_TOF_FAIL          = 4;
+// Bit 3:  Battery undervoltage
+const ERROR_BATT_UNDERVOLT    = 8;
+// Bit 4:  Battery overvoltage
+const ERROR_BATT_OVERVOLT     = 16;
+// Bit 5:  Kicker capacitor not charging
+const ERROR_KICKER_NO_CHARGE  = 32;
+// Bit 6:  Encoder reading invalid (any encoder)
+const ERROR_ENCODER_INVALID   = 64;
+// Bit 7:  Temperature warning
+const ERROR_TEMPERATURE_WARN  = 128;
+// Bit 8:  Motor 0 fault
+const ERROR_MOTOR0_FAULT      = 256;
+// Bit 9:  Motor 1 fault
+const ERROR_MOTOR1_FAULT      = 512;
+// Bit 10: Motor 2 fault
+const ERROR_MOTOR2_FAULT      = 1024;
+// Bit 11: Motor 3 fault
+const ERROR_MOTOR3_FAULT      = 2048;
+
+// ---------------------------------------------------------------------------
+// Header message, defines the msg type, robot ID and timestamp
+// ---------------------------------------------------------------------------
+message Header {
+    uint4 msg_type      = 1;  // Message type (e.g. MSG_TYPE_COMMAND)
+    uint4 robot_id      = 2;  // Target robot ID or ROBOT_ID_BROADCAST
+    Timestamp timestamp = 3;  // Millisecond timestamp for RTT measurement
+}
+// Header size: 1/2 + 1/2 + 4 = 5 bytes
+
+// ---------------------------------------------------------------------------
+// Pose message (shared between command and telemetry)
+// ---------------------------------------------------------------------------
+
+message Pose {
+    PositionScaled x                  = 1;  // X coordinate (mm)
+    PositionScaled y                  = 2;  // Y coordinate (mm)
+    AngleScaled angle                 = 3;  // Orientation (0.01°)
+    LinearVelocityScaled x_v          = 4;  // Linear velocity in X (mm/s)
+    LinearVelocityScaled y_v          = 5;  // Linear velocity in Y (mm/s)
+    AngularVelocityScaled angular_vel = 6;  // Angular velocity (0.01 rad/s)
+}
+// Pose size: 6 × 2 bytes = 12 bytes
+
+// ---------------------------------------------------------------------------
+// RobotCommand — base station → robot (unicast or broadcast)
+// First byte is msg_type; robot peeks it to demux before full decode.
+// Broadcast (robot_id == ROBOT_ID_BROADCAST): execute, do NOT reply.
+// Unicast: execute and reply with RobotTelemetry.
+//
+// Size: 5 (Header) + 12 (target_pose) + 12 (vision_pose) + 1 (kick_velocity) = 30 bytes  ✓
+// ---------------------------------------------------------------------------
+message RobotCommand {
+    Header header       = 1;  // Message header (msg_type, robot_id, timestamp)
+    Pose target_pose    = 2;  // Desired pose / velocity setpoint
+    Pose vision_pose    = 3;  // Current pose from vision system
+    uint8 kick_velocity = 4;  // 0 = no kick, 1–255 = kick strength
+}
+
+// ---------------------------------------------------------------------------
+// RobotConfig — base station → robot (always unicast; no reply expected)
+// Use config_flags bitmask to select operation(s); param carries auxiliary value.
+//
+// Size: 5 (Header) + 1 (config_flags) + 2 (param) = 8 bytes  ✓
+// ---------------------------------------------------------------------------
+message RobotConfig {
+    Header header       = 1;  // Message header (msg_type, robot_id, timestamp)
+    uint8  config_flags = 2;  // Bitmask of CONFIG_FLAG_* constants
+    uint16 param        = 3;  // Auxiliary parameter (e.g. new robot ID when CONFIG_FLAG_SET_ID)
+}
+
+// ---------------------------------------------------------------------------
+// RobotTelemetry — robot → base station (reply to unicast RobotCommand only)
+//
+// Size: 5 (Header) + 12 (robot_pose) + 1 (battery_percentage) + 2 (kicker_voltage) + 2 (error_flags) = 22 bytes  ✓
+// ---------------------------------------------------------------------------
+message RobotTelemetry {
+    Header header              = 1;  // Message header (msg_type, robot_id, timestamp)
+    Pose robot_pose            = 2;  // Current estimated pose
+    uint8  battery_percentage  = 3;  // 0–100 %
+    uint16 kicker_voltage      = 4;  // Voltage in 0.01 V units (e.g. 1650 = 16.50 V)
+    uint16 error_flags         = 5;  // Bitmask of ERROR_* constants
+}
