@@ -64,18 +64,15 @@ foreach(i RANGE 0 ${last_index} 2)
 endforeach()
 
 add_executable(nrf24_bridge_node
-        src/Nrf24.cpp
-        src/ssl_robot_protocol_bp.c
-        src/bitproto.c
+    src/Nrf24.cpp
 )
 
 ament_target_dependencies(nrf24_bridge_node ${REQUIRED_PACKAGES} ${REQUIRED_COMPONENTS})
 target_link_libraries(nrf24_bridge_node ${Protobuf_LIBRARIES} ${LIBSERIALPORT_LIBRARIES})
 
 target_include_directories(nrf24_bridge_node PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
-        ${LIBSERIALPORT_INCLUDE_DIRS}
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    ${LIBSERIALPORT_INCLUDE_DIRS}
 )
 
 install(TARGETS nrf24_bridge_node DESTINATION lib/${PROJECT_NAME})

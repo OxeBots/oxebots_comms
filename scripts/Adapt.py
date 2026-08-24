@@ -14,21 +14,18 @@ try:
     import ssl_robot_protocol_bp
 except ImportError:
     print("Generating Python bitproto module...")
+    from ament_index_python.packages import get_package_share_directory
     try:
-        # Pega o caminho absoluto onde o Adapt.py está rodando
         script_dir = os.path.dirname(os.path.abspath(__file__))
-
-        # O PULO DO GATO: Adiciona a pasta do script ao path do Python para ele enxergar o arquivo gerado
         if script_dir not in sys.path:
             sys.path.insert(0, script_dir)
+        interfaces_share = get_package_share_directory("oxebots_interfaces")
+        proto_path = os.path.join(interfaces_share, "proto", "ssl_robot_protocol.bitproto")
 
-        proto_path = os.path.join(script_dir, "proto", "ssl_robot_protocol.bitproto")
-
-        # Executa o bitproto gerando o módulo no diretório correto
         subprocess.run(["bitproto", "py", proto_path, script_dir], check=True)
         import ssl_robot_protocol_bp
     except Exception as e:
-        print(f"Failed to generate bitproto python module. Ensure bitproto is installed: pip install bitproto. Error: {e}")
+        print(f"Failed to generate bitproto python module. Error: {e}")
         sys.exit(1)
 
 MSG_TYPE_COMMAND = ssl_robot_protocol_bp.MSG_TYPE_COMMAND
