@@ -13,6 +13,8 @@
 #include "oxebots_interfaces/msg/robot_cmd.hpp"
 #include "oxebots_interfaces/msg/robot_telemetry.hpp"
 #include "oxebots_interfaces/ssl_robot_protocol_bp.h"
+#include <sys/ioctl.h>
+#include <algorithm>
 
 // USB find func
 std::string Find_Nrf24_port(uint16_t port_pid, uint16_t port_vid);
