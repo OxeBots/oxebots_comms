@@ -13,8 +13,10 @@
 #include "oxebots_interfaces/msg/robot_cmd.hpp"
 #include "oxebots_interfaces/msg/robot_telemetry.hpp"
 #include "oxebots_interfaces/ssl_robot_protocol_bp.h"
+#include <queue>
 #include <sys/ioctl.h>
 #include <algorithm>
+#include <utility>
 
 // USB find func
 std::string Find_Nrf24_port(uint16_t port_pid, uint16_t port_vid);
@@ -29,6 +31,9 @@ public:
     ~Nrf24HardwareBridge();
 
 private:
+    std::queue<std::pair<uint8_t, std::vector<uint8_t>>> tx_queue_; // sending queue <robot_id, package>
+    bool write_in_progress_ = false;                                // write control
+
     uint8_t recive_buffer_[256]; // USB enter buff
     std::vector<uint8_t> persistent_buffer_; // Cumulative buff ROS
 
@@ -38,6 +43,7 @@ private:
     void handle_receive(const boost::system::error_code& error, std::size_t bytes_transferred);
     void publish_telemetry(const struct RobotTelemetry& telemetry_bp);
     void configure_nrf24();
+    void start_next_write();
 
     // Creates the publisher and the subscriber
     rclcpp::Publisher<oxebots_interfaces::msg::RobotTelemetry>::SharedPtr telemetry_pub_;
@@ -45,6 +51,7 @@ private:
 
     // Creates the I/O execution context object and the serial context objetct
     boost::asio::io_context io_context_;
+    boost::asio::steady_timer tx_timeout_timer_;
     std::unique_ptr<boost::asio::serial_port> serial_;
 
     // Asio thread
