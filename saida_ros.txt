@@ -1,0 +1,1065 @@
+publisher: beginning loop
+publishing #1: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #2: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #3: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #4: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #5: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #6: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #7: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #8: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #9: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #10: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #11: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #12: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #13: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #14: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #15: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #16: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #17: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #18: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #19: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #20: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #21: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #22: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #23: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #24: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #25: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #26: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #27: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #28: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #29: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #30: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #31: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #32: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #33: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #34: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #35: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #36: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #37: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #38: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #39: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #40: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #41: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #42: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #43: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #44: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #45: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #46: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #47: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #48: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #49: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #50: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #51: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #52: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #53: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #54: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #55: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #56: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #57: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #58: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #59: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #60: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #61: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #62: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #63: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #64: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #65: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #66: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #67: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #68: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #69: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #70: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #71: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #72: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #73: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #74: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #75: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #76: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #77: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #78: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #79: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #80: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #81: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #82: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #83: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #84: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #85: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #86: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #87: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #88: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #89: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #90: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #91: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #92: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #93: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #94: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #95: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #96: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #97: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #98: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #99: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #100: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #101: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #102: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #103: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #104: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #105: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #106: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #107: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #108: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #109: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #110: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #111: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #112: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #113: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #114: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #115: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #116: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #117: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #118: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #119: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #120: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #121: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #122: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #123: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #124: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #125: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #126: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #127: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #128: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #129: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #130: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #131: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #132: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #133: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #134: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #135: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #136: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #137: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #138: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #139: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #140: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #141: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #142: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #143: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #144: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #145: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #146: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #147: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #148: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #149: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #150: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #151: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #152: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #153: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #154: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #155: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #156: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #157: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #158: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #159: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #160: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #161: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #162: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #163: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #164: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #165: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #166: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #167: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #168: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #169: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #170: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #171: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #172: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #173: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #174: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #175: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #176: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #177: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #178: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #179: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #180: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #181: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #182: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #183: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #184: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #185: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #186: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #187: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #188: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #189: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #190: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #191: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #192: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #193: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #194: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #195: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #196: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #197: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #198: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #199: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #200: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #201: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #202: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #203: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #204: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #205: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #206: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #207: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #208: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #209: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #210: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #211: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #212: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #213: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #214: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #215: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #216: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #217: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #218: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #219: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #220: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #221: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #222: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #223: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #224: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #225: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #226: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #227: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #228: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #229: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #230: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #231: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #232: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #233: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #234: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #235: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #236: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #237: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #238: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #239: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #240: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #241: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #242: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #243: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #244: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #245: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #246: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #247: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #248: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #249: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #250: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #251: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #252: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #253: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #254: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #255: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #256: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #257: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #258: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #259: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #260: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #261: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #262: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #263: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #264: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #265: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #266: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #267: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #268: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #269: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #270: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #271: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #272: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #273: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #274: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #275: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #276: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #277: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #278: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #279: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #280: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #281: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #282: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #283: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #284: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #285: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #286: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #287: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #288: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #289: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #290: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #291: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #292: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #293: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #294: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #295: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #296: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #297: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #298: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #299: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #300: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #301: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #302: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #303: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #304: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #305: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #306: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #307: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #308: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #309: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #310: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #311: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #312: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #313: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #314: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #315: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #316: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #317: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #318: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #319: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #320: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #321: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #322: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #323: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #324: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #325: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #326: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #327: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #328: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #329: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #330: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #331: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #332: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #333: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #334: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #335: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #336: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #337: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #338: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #339: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #340: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #341: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #342: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #343: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #344: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #345: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #346: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #347: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #348: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #349: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #350: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #351: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #352: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #353: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #354: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #355: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #356: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #357: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #358: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #359: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #360: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #361: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #362: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #363: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #364: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #365: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #366: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #367: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #368: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #369: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #370: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #371: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #372: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #373: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #374: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #375: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #376: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #377: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #378: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #379: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #380: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #381: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #382: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #383: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #384: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #385: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #386: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #387: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #388: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #389: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #390: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #391: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #392: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #393: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #394: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #395: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #396: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #397: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #398: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #399: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #400: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #401: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #402: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #403: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #404: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #405: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #406: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #407: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #408: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #409: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #410: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #411: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #412: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #413: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #414: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #415: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #416: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #417: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #418: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #419: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #420: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #421: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #422: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #423: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #424: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #425: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #426: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #427: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #428: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #429: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #430: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #431: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #432: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #433: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #434: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #435: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #436: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #437: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #438: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #439: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #440: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #441: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #442: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #443: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #444: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #445: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #446: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #447: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #448: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #449: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #450: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #451: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #452: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #453: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #454: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #455: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #456: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #457: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #458: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #459: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #460: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #461: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #462: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #463: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #464: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #465: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #466: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #467: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #468: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #469: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #470: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #471: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #472: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #473: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #474: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #475: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #476: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #477: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #478: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #479: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #480: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #481: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #482: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #483: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #484: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #485: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #486: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #487: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #488: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #489: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #490: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #491: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #492: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #493: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #494: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #495: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #496: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #497: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #498: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #499: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #500: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #501: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #502: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #503: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #504: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #505: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #506: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #507: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #508: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #509: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #510: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #511: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #512: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #513: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #514: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #515: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #516: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #517: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #518: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #519: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #520: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #521: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #522: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #523: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #524: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #525: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #526: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #527: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #528: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #529: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #530: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #531: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+
+publishing #532: oxebots_interfaces.msg.RobotCmd(robots=[oxebots_interfaces.msg.RobotCmdData(id=0, kick_speed=0.0, x_velocity=0.5, y_velocity=0.0, angular_velocity=0.0)])
+

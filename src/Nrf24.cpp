@@ -44,7 +44,7 @@ std::string Find_Nrf24_port(uint16_t port_pid, uint16_t port_vid){
     return port_name_string;
 }
 
-Nrf24HardwareBridge::Nrf24HardwareBridge() : Node("nrf24_hardware_bridge"), tx_timeout_timer_(io_context_)
+Nrf24HardwareBridge::Nrf24HardwareBridge() : Node("nrf24_hardware_bridge")
 {
     // declarete the AT config parameters and the default value
     this->declare_parameter("radio_rx_address", "ADMIN");
@@ -130,9 +130,7 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
         cmd_bitproto.header.msg_type = MSG_TYPE_COMMAND;
         cmd_bitproto.header.robot_id = robot_ros.id;
 
-        auto now = std::chrono::system_clock::now();
-        cmd_bitproto.header.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                            now.time_since_epoch()).count() & 0xFFFFFFFF;
+        cmd_bitproto.header.timestamp = (this->now().nanoseconds() / 1000000) & 0xFFFFFFFF;
 
         cmd_bitproto.target_pose.x_v = static_cast<int16_t>(robot_ros.x_velocity * 1000.0);
         cmd_bitproto.target_pose.y_v = static_cast<int16_t>(robot_ros.y_velocity * 1000.0);
@@ -152,7 +150,7 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
             auto current_front = tx_queue_.front();
             std::queue<std::pair<uint8_t, std::vector<uint8_t>>> empty;
             std::swap(tx_queue_, empty);
-            tx_queue_.push(current_front); // Mantém o que está sendo processado
+            tx_queue_.push(current_front);
         }
 
         // Pass the package of the sending queue to the io_context queue (other thead)
@@ -166,7 +164,6 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
         }
     });
 }
-
 void Nrf24HardwareBridge::start_next_write() {
     // check if its free
     if (tx_queue_.empty()) {
@@ -177,23 +174,6 @@ void Nrf24HardwareBridge::start_next_write() {
     write_in_progress_ = true;
     auto self = shared_from_this();
 
-    // creates an timer to get the return from the robots
-    tx_timeout_timer_.expires_after(std::chrono::milliseconds(80));
-
-    // handdle the timer expiration (Caminho 1: Robô Morto)
-    tx_timeout_timer_.async_wait([this, self](const boost::system::error_code& error) {
-        if (error != boost::asio::error::operation_aborted) {
-            if (write_in_progress_ && !tx_queue_.empty()) {
-                uint8_t lost_robot_id = tx_queue_.front().first;
-
-                RCLCPP_WARN(this->get_logger(), "\033[93mTimeout: Lost connection with robot %d\033[0m", lost_robot_id);
-
-                // O robô falhou. Avançamos a fila para não travar o jogo!
-                tx_queue_.pop();
-                start_next_write();
-            }
-        }
-    });
 
     // Sending process
     boost::asio::async_write(*serial_, boost::asio::buffer(tx_queue_.front().second),
@@ -203,6 +183,9 @@ void Nrf24HardwareBridge::start_next_write() {
                 write_in_progress_ = false;
                 std::queue<std::pair<uint8_t, std::vector<uint8_t>>> empty;
                 std::swap(tx_queue_, empty);
+            } else {
+                tx_queue_.pop();
+                start_next_write();
             }
         });
 }
@@ -221,7 +204,7 @@ void Nrf24HardwareBridge::handle_receive(const boost::system::error_code& error,
     // Debug
     RCLCPP_INFO(this->get_logger(), "Nrf24 received %ld bytes", bytes_transferred);
 
-    const size_t TELEMETRY_SIZE = 22;
+    const size_t TELEMETRY_SIZE = BYTES_LENGTH_ROBOT_TELEMETRY;
 
     if (!error) {
 
@@ -235,7 +218,7 @@ void Nrf24HardwareBridge::handle_receive(const boost::system::error_code& error,
 
         while (!persistent_buffer_.empty()) {
 
-            // TRASH HANDLER: Apenas apaga a sujeira da memória, NUNCA avança a fila aqui.
+            // TRASH HANDLER
             if (persistent_buffer_.size() >= TRASH_SIZE && std::equal(persistent_buffer_.begin(), persistent_buffer_.begin() + TRASH_SIZE, trash_return)){
                 persistent_buffer_.erase(persistent_buffer_.begin(), persistent_buffer_.begin() + TRASH_SIZE);
                 continue;
@@ -249,7 +232,7 @@ void Nrf24HardwareBridge::handle_receive(const boost::system::error_code& error,
             // Pick the lasts 4 bits (msg_tipe) from the byte 0 (header)
             uint8_t raw_msg_type = persistent_buffer_[0] & 0x0F;
 
-            // TELEMETRY HANDLER: Caminho 2 (Robô Vivo)
+            // TELEMETRY HANDLER
             if (raw_msg_type == MSG_TYPE_TELEMETRY) {
                 uint8_t raw_robot_id = (persistent_buffer_[0] >> 4) & 0x0F;
 
@@ -263,12 +246,6 @@ void Nrf24HardwareBridge::handle_receive(const boost::system::error_code& error,
                     // Delete the package from the buff
                     persistent_buffer_.erase(persistent_buffer_.begin(), persistent_buffer_.begin() + TELEMETRY_SIZE);
 
-                    // O robô respondeu! Cancelamos o erro e avançamos a fila rapidamente
-                    if (write_in_progress_ && !tx_queue_.empty() && tx_queue_.front().first == raw_robot_id) {
-                        tx_timeout_timer_.cancel();
-                        tx_queue_.pop();
-                        start_next_write();
-                    }
                 } else {
                     // trash handdler
                     persistent_buffer_.erase(persistent_buffer_.begin());
@@ -361,6 +338,9 @@ void Nrf24HardwareBridge::configure_nrf24() {
     // Make sure the _serial is clean before starting
     ::tcflush(serial_->native_handle(), TCIOFLUSH);
 
+    // control var to check if the config process its done
+    bool hardware_ok = true;
+
     for (const std::string& at_command : at_commands) {
 
         // Sends AT Commands
@@ -414,6 +394,7 @@ void Nrf24HardwareBridge::configure_nrf24() {
         } else {
             RCLCPP_WARN(this->get_logger(), "Warning: %s didn't return success (received %zu bytes (trash)).",
                         cmd_name.c_str(), response_data.size());
+            hardware_ok = false;
         }
 
         // Clear the buffer before continuing
@@ -425,7 +406,11 @@ void Nrf24HardwareBridge::configure_nrf24() {
     ::tcflush(serial_->native_handle(), TCIOFLUSH);
     persistent_buffer_.clear();
 
-    RCLCPP_INFO(this->get_logger(), "Radio configured");
+    if (hardware_ok) {
+        RCLCPP_INFO(this->get_logger(), "Radio configured successfully!");
+    } else {
+        RCLCPP_ERROR(this->get_logger(), "Radio configuration FAILED! Module might not respond properly.");
+    }
 }
 
 int main(int argc, char ** argv) {

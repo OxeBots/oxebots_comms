@@ -51,7 +51,6 @@ private:
 
     // Creates the I/O execution context object and the serial context objetct
     boost::asio::io_context io_context_;
-    boost::asio::steady_timer tx_timeout_timer_;
     std::unique_ptr<boost::asio::serial_port> serial_;
 
     // Asio thread
