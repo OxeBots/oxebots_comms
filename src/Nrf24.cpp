@@ -128,7 +128,9 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
         struct RobotCommand cmd_bitproto = {};
 
         cmd_bitproto.header.msg_type = MSG_TYPE_COMMAND;
+
         cmd_bitproto.header.robot_id = robot_ros.id;
+        RCLCPP_INFO(this->get_logger(), "NRF24, sending cmd to %d", robot_ros.id);
 
         cmd_bitproto.header.timestamp = (this->now().nanoseconds() / 1000000) & 0xFFFFFFFF;
 
