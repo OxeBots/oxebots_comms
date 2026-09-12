@@ -39,7 +39,7 @@ GrSimController::GrSimController() : rclcpp::Node("grSim_controller_node")
 
     // Create subscription for robot commands
     command_subscription_ = create_subscription<oxebots_interfaces::msg::RobotCmd>(
-      command_topic, 10, std::bind(&GrSimController::command_callback, this, std::placeholders::_1));
+      command_topic, rclcpp::SensorDataQoS(), std::bind(&GrSimController::command_callback, this, std::placeholders::_1));
 
     // Create subscription for game data
     game_data_subscription_ = create_subscription<oxebots_interfaces::msg::GameData>(
