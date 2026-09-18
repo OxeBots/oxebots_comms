@@ -1,6 +1,6 @@
 #include "oxebots_comms/Nrf24.hpp"
+#include <rclcpp/logging.hpp>
 
-/* fzr o handdle recieve moviemntar a fila de envio pelo cód de erro tbm*/
 
 std::string Find_Nrf24_port(uint16_t port_pid, uint16_t port_vid){
     // create the vars
@@ -44,7 +44,7 @@ std::string Find_Nrf24_port(uint16_t port_pid, uint16_t port_vid){
     return port_name_string;
 }
 
-Nrf24HardwareBridge::Nrf24HardwareBridge() : Node("nrf24_hardware_bridge")
+Nrf24HardwareBridge::Nrf24HardwareBridge() : Node("nrf24_hardware_bridge"), ack_timer_(io_context_)
 {
     // declarete the AT config parameters and the default value
     this->declare_parameter("radio_rx_address", "ADMIN");
@@ -87,6 +87,15 @@ Nrf24HardwareBridge::Nrf24HardwareBridge() : Node("nrf24_hardware_bridge")
         serial_->set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
         serial_->set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::none));
 
+        int fd = serial_->native_handle();
+        struct termios tty;
+        if (tcgetattr(fd, &tty) == 0) {
+                    cfmakeraw(&tty); // Desabilita ICANON, ECHO, etc (comportamento exato do Python)
+                    tty.c_cc[VMIN] = 1;  // Lê assim que 1 byte chegar
+                    tty.c_cc[VTIME] = 0; // Sem timeout no SO
+                    tcsetattr(fd, TCSANOW, &tty);
+                }
+
         RCLCPP_INFO(this->get_logger(), "Nrf24 bridge node started!");
     } catch (boost::system::system_error& error) {
         RCLCPP_ERROR(this->get_logger(), "Error while opening Nrf24: %s", error.what());
@@ -121,6 +130,7 @@ Nrf24HardwareBridge::~Nrf24HardwareBridge() {
 
 void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg) {
     // creates the queue to crontrol the sending process <robot_id, package)
+    RCLCPP_INFO(this->get_logger(), "[nrf24] Sending an radio command");
     std::vector<std::pair<uint8_t, std::vector<uint8_t>>> local_packets;
 
     for (const auto & robot_ros : msg->robots) {
@@ -128,9 +138,7 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
         struct RobotCommand cmd_bitproto = {};
 
         cmd_bitproto.header.msg_type = MSG_TYPE_COMMAND;
-
         cmd_bitproto.header.robot_id = robot_ros.id;
-        RCLCPP_INFO(this->get_logger(), "NRF24, sending cmd to %d", robot_ros.id);
 
         cmd_bitproto.header.timestamp = (this->now().nanoseconds() / 1000000) & 0xFFFFFFFF;
 
@@ -142,17 +150,14 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
         uint8_t buffer[BYTES_LENGTH_ROBOT_COMMAND];
         EncodeRobotCommand(&cmd_bitproto, buffer);
 
-
         local_packets.push_back({robot_ros.id, std::vector<uint8_t>(buffer, buffer + BYTES_LENGTH_ROBOT_COMMAND)});
     }
 
-    boost::asio::post(io_context_, [this, self = shared_from_this(), packets = std::move(local_packets)]() {
+    boost::asio::post(io_context_, [this, packets = std::move(local_packets)]() {
 
-        if (tx_queue_.size() > 6) {
-            auto current_front = tx_queue_.front();
-            std::queue<std::pair<uint8_t, std::vector<uint8_t>>> empty;
-            std::swap(tx_queue_, empty);
-            tx_queue_.push(current_front);
+        // clear the queue (the oldest commands)
+        while (tx_queue_.size() > 6) {
+            tx_queue_.pop();
         }
 
         // Pass the package of the sending queue to the io_context queue (other thead)
@@ -165,109 +170,162 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
             start_next_write();
         }
     });
+    RCLCPP_INFO(this->get_logger(), "[nrf24] Sended an radio command");
 }
+
 void Nrf24HardwareBridge::start_next_write() {
     // check if its free
     if (tx_queue_.empty()) {
         write_in_progress_ = false;
+        waiting_for_ack_ = false;
         return;
     }
 
     write_in_progress_ = true;
-    auto self = shared_from_this();
+    waiting_for_ack_ = true;
 
+    persistent_buffer_.clear();
+    ::tcflush(serial_->native_handle(), TCIOFLUSH);
 
-    // Sending process
-    boost::asio::async_write(*serial_, boost::asio::buffer(tx_queue_.front().second),
-        [this, self](const boost::system::error_code& error, std::size_t /*bytes_transferred*/) {
-            if (error) {
-                RCLCPP_ERROR(this->get_logger(), "Error during sending process: %s", error.message().c_str());
-                write_in_progress_ = false;
-                std::queue<std::pair<uint8_t, std::vector<uint8_t>>> empty;
-                std::swap(tx_queue_, empty);
-            } else {
-                tx_queue_.pop();
-                start_next_write();
-            }
-        });
-}
+    boost::system::error_code ec;
 
-void Nrf24HardwareBridge::start_receive() {
-    // Start the asynchronous receiving process and call handle_receive on receive
-    serial_->async_read_some(
-    boost::asio::buffer(recive_buffer_, sizeof(recive_buffer_)),
-    std::bind(&Nrf24HardwareBridge::handle_receive, this,
-              std::placeholders::_1, std::placeholders::_2)
-    );
-}
+    boost::asio::write(*serial_, boost::asio::buffer(tx_queue_.front().second), ec);
 
-void Nrf24HardwareBridge::handle_receive(const boost::system::error_code& error, std::size_t bytes_transferred)
-{
-    // Debug
-    RCLCPP_INFO(this->get_logger(), "Nrf24 received %ld bytes", bytes_transferred);
-
-    const size_t TELEMETRY_SIZE = BYTES_LENGTH_ROBOT_TELEMETRY;
-
-    if (!error) {
-
-        // return sequency that represents tx complete
-        const uint8_t trash_return[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00};
-        const size_t TRASH_SIZE = 6;
-
-        // puts the recive data in an process buff
-        persistent_buffer_.insert(persistent_buffer_.end(),
-                          recive_buffer_, recive_buffer_ + bytes_transferred);
-
-        while (!persistent_buffer_.empty()) {
-
-            // TRASH HANDLER
-            if (persistent_buffer_.size() >= TRASH_SIZE && std::equal(persistent_buffer_.begin(), persistent_buffer_.begin() + TRASH_SIZE, trash_return)){
-                persistent_buffer_.erase(persistent_buffer_.begin(), persistent_buffer_.begin() + TRASH_SIZE);
-                continue;
-            }
-
-            // cheks if the message its complete
-            if (persistent_buffer_.size() < TELEMETRY_SIZE) {
-                break;
-            }
-
-            // Pick the lasts 4 bits (msg_tipe) from the byte 0 (header)
-            uint8_t raw_msg_type = persistent_buffer_[0] & 0x0F;
-
-            // TELEMETRY HANDLER
-            if (raw_msg_type == MSG_TYPE_TELEMETRY) {
-                uint8_t raw_robot_id = (persistent_buffer_[0] >> 4) & 0x0F;
-
-                if (raw_robot_id <= 11) {
-                    struct RobotTelemetry telemetry_bitproto;
-                    DecodeRobotTelemetry(&telemetry_bitproto, persistent_buffer_.data());
-
-                    // call the ros publisher process
-                    this->publish_telemetry(telemetry_bitproto);
-
-                    // Delete the package from the buff
-                    persistent_buffer_.erase(persistent_buffer_.begin(), persistent_buffer_.begin() + TELEMETRY_SIZE);
-
-                } else {
-                    // trash handdler
-                    persistent_buffer_.erase(persistent_buffer_.begin());
-                }
-            }
-            else {
-                // data out of sync, try again
-                persistent_buffer_.erase(persistent_buffer_.begin());
-            }
-        }
-    }
-    else
-    {
-        RCLCPP_ERROR(this->get_logger(), "Error while reading USB (NRF24) %s", error.message().c_str());
+    if (ec) {
+        RCLCPP_ERROR(this->get_logger(), "Error TX: %s", ec.message().c_str());
+        tx_queue_.pop();
+        waiting_for_ack_ = false;
+        start_next_write();
         return;
     }
 
-    // re-make the program listen to the telemetry data
-    this->start_receive();
+    ack_timer_.expires_after(std::chrono::milliseconds(200));
+    ack_timer_.async_wait(std::bind(&Nrf24HardwareBridge::handle_ack_timeout, this, std::placeholders::_1));
 }
+
+void Nrf24HardwareBridge::handle_ack_timeout(const boost::system::error_code& error) {
+    if (!error && waiting_for_ack_) {
+        RCLCPP_INFO(this->get_logger(), "[nrf24] Timeout: drop pkg, no response from Robot");
+        waiting_for_ack_ = false;
+
+        if (!tx_queue_.empty()) {
+            tx_queue_.pop();
+        }
+        start_next_write();
+    }
+}
+
+    void Nrf24HardwareBridge::start_receive() {
+        // Start the asynchronous receiving process and call handle_receive on receive
+        serial_->async_read_some(
+        boost::asio::buffer(recive_buffer_, sizeof(recive_buffer_)),
+        std::bind(&Nrf24HardwareBridge::handle_receive, this,
+                std::placeholders::_1, std::placeholders::_2)
+        );
+    }
+
+    void Nrf24HardwareBridge::handle_receive(const boost::system::error_code& error, std::size_t bytes_transferred)
+    {
+        const size_t TELEMETRY_SIZE = BYTES_LENGTH_ROBOT_TELEMETRY;
+
+        if (!error) {
+            if (bytes_transferred > 0) {
+                RCLCPP_INFO(this->get_logger(), "[RX] Nrf24 received %ld raw bytes from USB", bytes_transferred);
+            }
+
+            // Sequência que representa a confirmação de transmissão do dongle (TX complete)
+            const uint8_t trash_return[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00};
+            const size_t TRASH_SIZE = 6;
+
+            // Acumula os dados recebidos no buffer persistente
+            persistent_buffer_.insert(persistent_buffer_.end(),
+                                      recive_buffer_, recive_buffer_ + bytes_transferred);
+
+            bool should_advance_queue = false;
+
+            while (!persistent_buffer_.empty()) {
+
+                // 1. TRASH / TX-COMPLETE HANDLER (Limpeza contínua de lixo e ACKs do dongle)
+                bool cleaned_trash = false;
+                while (persistent_buffer_.size() >= TRASH_SIZE &&
+                       std::equal(trash_return, trash_return + TRASH_SIZE, persistent_buffer_.begin())) {
+
+                    persistent_buffer_.erase(persistent_buffer_.begin(), persistent_buffer_.begin() + TRASH_SIZE);
+                    cleaned_trash = true;
+                    RCLCPP_INFO(this->get_logger(), "[ACK] Dongle TX-complete status (02 00 00 00 00 00) stripped.");
+
+                    // Stop-and-Wait Handling
+                    if (waiting_for_ack_) {
+                        waiting_for_ack_ = false;
+                        ack_timer_.cancel(); // Cancela o watchdog timer de timeout
+                        should_advance_queue = true;
+                        RCLCPP_INFO(this->get_logger(), "[STOP-AND-WAIT] ACK received successfully. Advancing TX queue.");
+                    }
+                }
+
+                if (cleaned_trash) {
+                    continue; // Reavalia o buffer desde o início após limpar o lixo
+                }
+
+                // 2. Verifica se há bytes suficientes para compor um pacote completo de telemetria
+                if (persistent_buffer_.size() < TELEMETRY_SIZE) {
+                    break; // Aguarda mais dados chegarem da serial
+                }
+
+                // 3. Lê o tipo de mensagem (últimos 4 bits do byte 0 do cabeçalho)
+                uint8_t raw_msg_type = persistent_buffer_[0] & 0x0F;
+
+                // 4. TELEMETRY HANDLER
+                if (raw_msg_type == MSG_TYPE_TELEMETRY) {
+                    uint8_t raw_robot_id = (persistent_buffer_[0] >> 4) & 0x0F;
+
+                    if (raw_robot_id <= 11) {
+                        struct RobotTelemetry telemetry_bitproto;
+                        DecodeRobotTelemetry(&telemetry_bitproto, persistent_buffer_.data());
+
+                        // Publica a telemetria no ROS 2
+                        this->publish_telemetry(telemetry_bitproto);
+
+                        RCLCPP_INFO(this->get_logger(), "[TELEMETRY] Decoded & Published packet from Robot ID: %d", raw_robot_id);
+
+                        // Remove o pacote de telemetria processado do buffer
+                        persistent_buffer_.erase(persistent_buffer_.begin(), persistent_buffer_.begin() + TELEMETRY_SIZE);
+
+                        // Stop-and-Wait Handling (Caso o robô responda com telemetria servindo de ACK)
+                        if (waiting_for_ack_) {
+                            waiting_for_ack_ = false;
+                            ack_timer_.cancel();
+                            should_advance_queue = true;
+                            RCLCPP_INFO(this->get_logger(), "[STOP-AND-WAIT] Telemetry packet acted as ACK. Advancing TX queue.");
+                        }
+                    } else {
+                        RCLCPP_WARN(this->get_logger(), "[WARN] Invalid Robot ID (%d) detected. Dropping byte.", raw_robot_id);
+                        persistent_buffer_.erase(persistent_buffer_.begin());
+                    }
+                }
+                else {
+                    // Dados fora de sincronia ou bytes órfãos, descarta 1 byte por vez para tentar resincronizar
+                    RCLCPP_DEBUG(this->get_logger(), "[SYNC] Data out of sync (msg_type: 0x%02X). Resyncing buffer...", raw_msg_type);
+                    persistent_buffer_.erase(persistent_buffer_.begin());
+                }
+            }
+
+            // Avança a fila de transmissão caso um ACK tenha sido confirmado
+            if (should_advance_queue) {
+                if (!tx_queue_.empty()) {
+                    tx_queue_.pop(); // Remove o pacote enviado da fila
+                }
+                start_next_write(); // Envia o próximo pacote pendente
+            }
+        }
+        else {
+            RCLCPP_ERROR(this->get_logger(), "Error while reading USB (NRF24): %s", error.message().c_str());
+            return;
+        }
+
+        // Reinicia o processo de escuta assíncrona para o próximo ciclo de leitura
+        this->start_receive();
+    }
 
 void Nrf24HardwareBridge::publish_telemetry(const struct RobotTelemetry& telemetry_bp)
 {
