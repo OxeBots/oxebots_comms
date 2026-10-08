@@ -52,15 +52,29 @@ Nrf24HardwareBridge::Nrf24HardwareBridge() : Node("nrf24_hardware_bridge")
     this->declare_parameter("radio_frequency", 2.476);
     this->declare_parameter("radio_rate", 3);
 
+    // "velocity" (default): manda vx,vy,w a cada tick, igual sempre foi. "point": manda um
+    // setpoint de trajetoria (ponto futuro + velocidade + angulo + vision_pose), deixando o
+    // firmware calcular as velocidades de roda localmente. Nao afeta o grSim, que continua
+    // lendo /robot_commands por outro caminho (sim_bridge).
+    std::string command_mode = this->declare_parameter("command_mode", std::string("velocity"));
+
     // set the publisher to the telemetry return
     telemetry_pub_ = this->create_publisher<oxebots_interfaces::msg::RobotTelemetry>("/robot_telemetry", 10);
 
-    // set the subscriber to the robots commands
-    command_sub_ = this->create_subscription<oxebots_interfaces::msg::RobotCmd>(
-        "/robot_commands",
-        rclcpp::SensorDataQoS(),
-        std::bind(&Nrf24HardwareBridge::send_command, this, std::placeholders::_1)
-    );
+    // set the subscriber to the robots commands, de acordo com o modo escolhido
+    if (command_mode == "point") {
+        trajectory_setpoint_sub_ = this->create_subscription<oxebots_interfaces::msg::RobotTrajectorySetpoint>(
+            "/robot_trajectory_setpoints",
+            rclcpp::SensorDataQoS(),
+            std::bind(&Nrf24HardwareBridge::send_trajectory_setpoint, this, std::placeholders::_1)
+        );
+    } else {
+        command_sub_ = this->create_subscription<oxebots_interfaces::msg::RobotCmd>(
+            "/robot_commands",
+            rclcpp::SensorDataQoS(),
+            std::bind(&Nrf24HardwareBridge::send_command, this, std::placeholders::_1)
+        );
+    }
 
     // Starts the Nrf24 search
     const uint16_t port_vid = 0x1A86, port_pid = 0x7523;
@@ -119,10 +133,19 @@ Nrf24HardwareBridge::~Nrf24HardwareBridge() {
     }
 }
 
-void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg) {
-    // creates the queue to crontrol the sending process <robot_id, package)
-    std::vector<std::pair<uint8_t, std::vector<uint8_t>>> local_packets;
+struct Pose Nrf24HardwareBridge::kinematic_pose_to_bitproto(
+    const oxebots_interfaces::msg::RobotKinematicPose& pose) {
+    struct Pose pose_bitproto = {};
+    pose_bitproto.x = static_cast<int16_t>(pose.x);
+    pose_bitproto.y = static_cast<int16_t>(pose.y);
+    pose_bitproto.angle = static_cast<int16_t>(pose.angle * (180.0 / M_PI) * 100.0);
+    pose_bitproto.x_v = static_cast<int16_t>(pose.x_v);
+    pose_bitproto.y_v = static_cast<int16_t>(pose.y_v);
+    pose_bitproto.angular_vel = static_cast<int16_t>(pose.angular_vel * 100.0);
+    return pose_bitproto;
+}
 
+void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg) {
     for (const auto & robot_ros : msg->robots) {
         // parse to use bitproto codification
         struct RobotCommand cmd_bitproto = {};
@@ -137,12 +160,33 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
         cmd_bitproto.target_pose.angular_vel = static_cast<int16_t>(robot_ros.angular_velocity * 100.0);
         cmd_bitproto.kick_velocity = robot_ros.kick_speed;
 
-        uint8_t buffer[BYTES_LENGTH_ROBOT_COMMAND];
-        EncodeRobotCommand(&cmd_bitproto, buffer);
-
-
-        local_packets.push_back({robot_ros.id, std::vector<uint8_t>(buffer, buffer + BYTES_LENGTH_ROBOT_COMMAND)});
+        enqueue_packet(robot_ros.id, cmd_bitproto);
     }
+}
+
+void Nrf24HardwareBridge::send_trajectory_setpoint(
+    const oxebots_interfaces::msg::RobotTrajectorySetpoint::SharedPtr msg) {
+    for (const auto & robot_ros : msg->robots) {
+        struct RobotCommand cmd_bitproto = {};
+
+        cmd_bitproto.header.msg_type = MSG_TYPE_COMMAND;
+        cmd_bitproto.header.robot_id = robot_ros.id;
+        cmd_bitproto.header.timestamp = (this->now().nanoseconds() / 1000000) & 0xFFFFFFFF;
+
+        cmd_bitproto.target_pose = kinematic_pose_to_bitproto(robot_ros.target);
+        cmd_bitproto.vision_pose = kinematic_pose_to_bitproto(robot_ros.vision);
+        cmd_bitproto.kick_velocity = robot_ros.kick_speed;
+
+        enqueue_packet(robot_ros.id, cmd_bitproto);
+    }
+}
+
+void Nrf24HardwareBridge::enqueue_packet(uint8_t robot_id, struct RobotCommand cmd_bitproto) {
+    uint8_t buffer[BYTES_LENGTH_ROBOT_COMMAND];
+    EncodeRobotCommand(&cmd_bitproto, buffer);
+
+    std::vector<std::pair<uint8_t, std::vector<uint8_t>>> local_packets;
+    local_packets.push_back({robot_id, std::vector<uint8_t>(buffer, buffer + BYTES_LENGTH_ROBOT_COMMAND)});
 
     boost::asio::post(io_context_, [this, self = shared_from_this(), packets = std::move(local_packets)]() {
 
