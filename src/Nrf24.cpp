@@ -146,6 +146,13 @@ struct Pose Nrf24HardwareBridge::kinematic_pose_to_bitproto(
 }
 
 void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg) {
+    // Agrupa todos os robôs da mensagem num único post (ver encode_packet/enqueue_packets):
+    // hoje cada movement_calculation_node publica 1 robô por mensagem, então isso na prática
+    // sempre despacha 1 pacote por post, mas mantém a mesma garantia de atomicidade do código
+    // legado caso essa premissa mude (uma mensagem com vários robôs não pode ser fatiada em
+    // posts separados, senão um deles pode ser descartado sozinho pelo overflow da fila).
+    std::vector<std::pair<uint8_t, std::vector<uint8_t>>> local_packets;
+
     for (const auto & robot_ros : msg->robots) {
         // parse to use bitproto codification
         struct RobotCommand cmd_bitproto = {};
@@ -160,12 +167,16 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
         cmd_bitproto.target_pose.angular_vel = static_cast<int16_t>(robot_ros.angular_velocity * 100.0);
         cmd_bitproto.kick_velocity = robot_ros.kick_speed;
 
-        enqueue_packet(robot_ros.id, cmd_bitproto);
+        local_packets.push_back(encode_packet(robot_ros.id, cmd_bitproto));
     }
+
+    enqueue_packets(std::move(local_packets));
 }
 
 void Nrf24HardwareBridge::send_trajectory_setpoint(
     const oxebots_interfaces::msg::RobotTrajectorySetpoint::SharedPtr msg) {
+    std::vector<std::pair<uint8_t, std::vector<uint8_t>>> local_packets;
+
     for (const auto & robot_ros : msg->robots) {
         struct RobotCommand cmd_bitproto = {};
 
@@ -177,17 +188,20 @@ void Nrf24HardwareBridge::send_trajectory_setpoint(
         cmd_bitproto.vision_pose = kinematic_pose_to_bitproto(robot_ros.vision);
         cmd_bitproto.kick_velocity = robot_ros.kick_speed;
 
-        enqueue_packet(robot_ros.id, cmd_bitproto);
+        local_packets.push_back(encode_packet(robot_ros.id, cmd_bitproto));
     }
+
+    enqueue_packets(std::move(local_packets));
 }
 
-void Nrf24HardwareBridge::enqueue_packet(uint8_t robot_id, struct RobotCommand cmd_bitproto) {
+std::pair<uint8_t, std::vector<uint8_t>> Nrf24HardwareBridge::encode_packet(
+    uint8_t robot_id, struct RobotCommand cmd_bitproto) {
     uint8_t buffer[BYTES_LENGTH_ROBOT_COMMAND];
     EncodeRobotCommand(&cmd_bitproto, buffer);
+    return {robot_id, std::vector<uint8_t>(buffer, buffer + BYTES_LENGTH_ROBOT_COMMAND)};
+}
 
-    std::vector<std::pair<uint8_t, std::vector<uint8_t>>> local_packets;
-    local_packets.push_back({robot_id, std::vector<uint8_t>(buffer, buffer + BYTES_LENGTH_ROBOT_COMMAND)});
-
+void Nrf24HardwareBridge::enqueue_packets(std::vector<std::pair<uint8_t, std::vector<uint8_t>>> local_packets) {
     boost::asio::post(io_context_, [this, self = shared_from_this(), packets = std::move(local_packets)]() {
 
         if (tx_queue_.size() > 6) {

@@ -41,7 +41,8 @@ private:
     // Intern func
     void send_command(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg);
     void send_trajectory_setpoint(const oxebots_interfaces::msg::RobotTrajectorySetpoint::SharedPtr msg);
-    void enqueue_packet(uint8_t robot_id, struct RobotCommand cmd_bitproto);
+    static std::pair<uint8_t, std::vector<uint8_t>> encode_packet(uint8_t robot_id, struct RobotCommand cmd_bitproto);
+    void enqueue_packets(std::vector<std::pair<uint8_t, std::vector<uint8_t>>> local_packets);
     static struct Pose kinematic_pose_to_bitproto(const oxebots_interfaces::msg::RobotKinematicPose& pose);
     void start_receive();
     void handle_receive(const boost::system::error_code& error, std::size_t bytes_transferred);
