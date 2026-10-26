@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "oxebots_comms/grSim_controller.hpp"
+#include <cmath>
 
 GrSimController::GrSimController() : rclcpp::Node("grSim_controller_node")
 {
@@ -55,16 +56,31 @@ void GrSimController::command_callback(const oxebots_interfaces::msg::RobotCmd::
 
     for (const auto & robot_command_data : msg->robots)
     {
+        float vx = robot_command_data.x_velocity;
+        float vy = robot_command_data.y_velocity;
+        float w = robot_command_data.angular_velocity;
+        float kick_speed = robot_command_data.kick_speed;
+
+        if (!std::isfinite(vx) || !std::isfinite(vy) || !std::isfinite(w) || !std::isfinite(kick_speed))
+        {
+            RCLCPP_WARN_THROTTLE(rclcpp::get_logger("GrSimController"), *this->get_clock(), 1000,
+                                 "Valor não numérico detectado para Robô %d (vx=%.2f, vy=%.2f, w=%.2f, kick=%.2f). Zerando valores inválidos.",
+                                 robot_command_data.id, vx, vy, w, kick_speed);
+            if (!std::isfinite(vx)) vx = 0.0f;
+            if (!std::isfinite(vy)) vy = 0.0f;
+            if (!std::isfinite(w)) w = 0.0f;
+            if (!std::isfinite(kick_speed)) kick_speed = 0.0f;
+        }
+
         // Log para debug (aparecerá a cada 1 segundo para não poluir)
         RCLCPP_INFO_THROTTLE(rclcpp::get_logger("GrSimController"), *this->get_clock(), 1000, 
                              "Comando recebido para Robô %d: vx=%.2f, vy=%.2f, w=%.2f", 
-                             robot_command_data.id, robot_command_data.x_velocity, 
-                             robot_command_data.y_velocity, robot_command_data.angular_velocity);
+                             robot_command_data.id, vx, vy, w);
 
         auto * robot_cmd = packet.add_robot_commands();
 
         robot_cmd->set_id(robot_command_data.id);
-        robot_cmd->set_kick_speed(robot_command_data.kick_speed);
+        robot_cmd->set_kick_speed(kick_speed);
         robot_cmd->set_dribbler_speed(0);  // No dribbler
         robot_cmd->set_kick_angle(0);      // No kick angle
 
@@ -72,9 +88,9 @@ void GrSimController::command_callback(const oxebots_interfaces::msg::RobotCmd::
         auto * global_velocity = move_cmd->mutable_global_velocity();
 
         // Define as velocidades globais diretamente (restrição de área é responsabilidade da estratégia/planejamento)
-        global_velocity->set_x(robot_command_data.x_velocity);
-        global_velocity->set_y(robot_command_data.y_velocity);
-        global_velocity->set_angular(robot_command_data.angular_velocity);
+        global_velocity->set_x(vx);
+        global_velocity->set_y(vy);
+        global_velocity->set_angular(w);
     }
 
     if (packet.robot_commands_size() > 0)
