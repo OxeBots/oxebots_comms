@@ -8,8 +8,10 @@
   <license>GPLv3</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>pkg-config</buildtool_depend>
   <build_depend>protobuf</build_depend>
   <exec_depend>protobuf</exec_depend>
+  <exec_depend>python3-serial</exec_depend>
 
   <depend>boost</depend>
   <depend>oxebots_interfaces</depend>
@@ -20,6 +22,7 @@
   <depend>geometry_msgs</depend>
   <depend>libserialport-dev</depend>
 
+  <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

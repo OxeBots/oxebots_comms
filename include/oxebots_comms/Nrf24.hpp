@@ -6,6 +6,7 @@
 #include <vector>
 #include <rclcpp/rclcpp.hpp>
 #include "oxebots_interfaces/msg/robot_cmd.hpp"
+#include "oxebots_interfaces/msg/robot_trajectory_setpoint.hpp"
 #include "oxebots_interfaces/msg/robot_telemetry.hpp"
 #include "oxebots_interfaces/ssl_robot_protocol_bp.h"
 
@@ -29,5 +30,9 @@ private:
     bool open_serial_port(const std::string& port_name);
 
     rclcpp::Publisher<oxebots_interfaces::msg::RobotTelemetry>::SharedPtr telemetry_pub_;
+    // "velocity" mode (default): le /robot_commands e manda so x_v,y_v,angular_vel (como hoje).
+    // "point" mode: le /robot_trajectory_setpoints e manda o setpoint completo (ponto futuro +
+    // velocidade + angulo + vision_pose), deixando o firmware do robo calcular as velocidades
+    // de roda localmente em malha fechada. So uma das duas assinaturas fica ativa por vez.
     rclcpp::Subscription<oxebots_interfaces::msg::RobotCmd>::SharedPtr command_sub_;
 };

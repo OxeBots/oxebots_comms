@@ -93,6 +93,14 @@ install(
 )
 
 if(BUILD_TESTING)
+    find_package(ament_cmake_gtest REQUIRED)
+    ament_add_gtest(test_kinematics
+        test/test_kinematics.cpp
+    )
+    ament_target_dependencies(test_kinematics
+        rclcpp
+    )
+
     find_package(ament_lint_auto REQUIRED)
     set(ament_cmake_copyright_FOUND TRUE)
     set(ament_cmake_cpplint_FOUND TRUE)

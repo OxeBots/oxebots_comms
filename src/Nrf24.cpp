@@ -25,7 +25,7 @@ namespace {
     const std::string C_BOLD    = "\033[1m";
     const std::string C_RESET   = "\033[0m";
 
-    // estado do robô para ajuste de banda 
+    // estado do robô para ajuste de banda
     struct RobotRadioState {
         int consecutive_losses = 0;
         std::chrono::steady_clock::time_point last_try_time = std::chrono::steady_clock::now();
@@ -270,6 +270,18 @@ bool Nrf24HardwareBridge::open_serial_port(const std::string& port_name) {
     }
 
     return true;
+}
+
+struct Pose Nrf24HardwareBridge::kinematic_pose_to_bitproto(
+    const oxebots_interfaces::msg::RobotKinematicPose& pose) {
+    struct Pose pose_bitproto = {};
+    pose_bitproto.x = static_cast<int16_t>(pose.x);
+    pose_bitproto.y = static_cast<int16_t>(pose.y);
+    pose_bitproto.angle = static_cast<int16_t>(pose.angle * (180.0 / M_PI) * 100.0);
+    pose_bitproto.x_v = static_cast<int16_t>(pose.x_v);
+    pose_bitproto.y_v = static_cast<int16_t>(pose.y_v);
+    pose_bitproto.angular_vel = static_cast<int16_t>(pose.angular_vel * 100.0);
+    return pose_bitproto;
 }
 
 void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg) {
