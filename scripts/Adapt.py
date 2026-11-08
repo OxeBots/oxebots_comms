@@ -252,8 +252,9 @@ class Nrf24HardwareBridge(Node):
             w_scaled = int(robot.angular_velocity * 100)
             kick = int(robot.kick_speed)
 
+            # ID HARDCODADO PRA TESTE
             self.device.send_command(
-                robot_id=0,
+                robot_id=1,
                 vx=vx_mm,
                 vy=vy_mm,
                 w=w_scaled,

@@ -22,6 +22,7 @@ import serial.tools.list_ports
 MSG_TYPE_COMMAND = ssl_robot_protocol_bp.MSG_TYPE_COMMAND
 MSG_TYPE_CONFIG = ssl_robot_protocol_bp.MSG_TYPE_CONFIG
 MSG_TYPE_TELEMETRY = ssl_robot_protocol_bp.MSG_TYPE_TELEMETRY
+MSG_TYPE_TELEMETRY_REQ = ssl_robot_protocol_bp.MSG_TYPE_TELEMETRY_REQ
 ROBOT_ID_BROADCAST = ssl_robot_protocol_bp.ROBOT_ID_BROADCAST
 ROBOT_ID_MAX = ssl_robot_protocol_bp.ROBOT_ID_MAX
 
@@ -103,35 +104,45 @@ class nRF24L01_Controller:
 
     @staticmethod
     def translate_chinese(text):
-        """Translate common Chinese terms to English"""
+        """Translate common Chinese (GB2312) terms from the USB dongle into English."""
         translations = {
+            "通讯波特率设置成功": "Baud rate setting successful",
+            "通讯频率设置成功": "Communication frequency setting successful",
+            "传输速率设置成功": "Data rate setting successful",
+            "CRC校验模式设置成功": "CRC check mode setting successful",
+            "校验模式设置成功": "Check mode setting successful",
+            "地址设置成功": "Address setting successful",
             "系统信息": "System Information",
-            "波特率": "Baud Rate",
-            "目标地址": "Target Address",
-            "本地接收地址": "Local Receive Address",
+            "本地接收地址0": "Local Receive Address (Pipe 0)",
+            "本地接收地址": "Local Receive Address (RX)",
+            "目标地址": "Target Address (TX)",
+            "空中传输速率": "Air Data Rate",
+            "低噪声放大增益": "Low Noise Amplifier Gain",
             "通讯频率": "Communication Frequency",
             "校验模式": "Check Mode",
             "发射功率": "Transmit Power",
-            "空中传输速率": "Air Data Rate",
-            "低噪声放大增益": "Low Noise Amplifier Gain",
-            "开启": "Enabled",
-            "关闭": "Disabled",
-            "传输速率设置成功": "Data rate setting successful",
-            "通讯波特率设置成功": "Baud rate setting successful",
-            "地址设置成功": "Address setting successful",
+            "传输速率": "Data Rate",
+            "波特率": "Baud Rate",
+            "CRC校验": "CRC Check",
             "设置成功": "Setting successful",
             "成功": "successful",
-            "CRC校验": "CRC Check",
-            "位": " bits ",
-            "传输速率": "Data Rate",
+            "开启": "Enabled",
+            "关闭": "Disabled",
+            "校验": " Check",
+            "位": "-bit ",
+            "：     ": ": ",
+            "：": ": ",
+            "！！": "!",
+            "！": "!",
         }
         for cn, en in translations.items():
             text = text.replace(cn, en)
         return text
 
-    def send_at_command(self, command, wait_time=0.1):
+    def send_at_command(self, command, wait_time=0.1, verbose=True):
         """Send AT command and read response"""
-        print(f"{Colors.BLUE}>>> {command}{Colors.RESET}")
+        if verbose:
+            print(f"{Colors.BLUE}>>> {command}{Colors.RESET}")
 
         self.ser.reset_input_buffer()
         self.ser.write((command + "\r\n").encode("ascii"))
@@ -152,40 +163,54 @@ class nRF24L01_Controller:
             hex_str = " ".join(f"{b:02x}" for b in response)
             decoded = self.decode_gb2312(hex_str)
             if decoded.startswith("Decoding error"):
-                print(f"{Colors.RED}<<< {decoded}{Colors.RESET}")
+                if verbose:
+                    print(f"{Colors.RED}<<< {decoded}{Colors.RESET}")
                 return decoded
             translated = self.translate_chinese(decoded)
-            print(f"{Colors.GREEN}<<< {translated}{Colors.RESET}")
+            if verbose:
+                print(f"{Colors.GREEN}<<< {translated.strip()}{Colors.RESET}")
             return translated
-        print(f"{Colors.YELLOW}<<< No response{Colors.RESET}")
+        if verbose:
+            print(f"{Colors.YELLOW}<<< No response{Colors.RESET}")
+        return ""
+
+    @staticmethod
+    def _decode_hex_csv_ascii(val_str):
+        """Convert '0x45,0x53,0x50,0x33,0x32' to ' (\"ESP32\")' if printable ASCII."""
+        try:
+            parts = [int(x.strip(), 16) for x in val_str.split(",")]
+            if len(parts) == 5 and all(32 <= b <= 126 for b in parts):
+                return f' ("{"".join(chr(b) for b in parts)}")'
+        except Exception:
+            pass
         return ""
 
     def get_system_info(self):
-        """Get and display system information"""
-        print("\n" + "=" * 50)
-        print(f"{Colors.BOLD}SYSTEM INFORMATION{Colors.RESET}")
-        print("=" * 50)
-        response = self.send_at_command("AT?")
+        """Query AT? on the USB dongle and display a cleanly formatted system table."""
+        response = self.send_at_command("AT?", verbose=False)
         if not response:
+            print(f"{Colors.RED}No response to AT? from USB dongle.{Colors.RESET}")
             return
-        key_map = {
-            "Baud Rate": "Baud Rate",
-            "Target Address": "Target Address",
-            "Local Receive Address": "Local Receive Address",
-            "Communication Frequency": "Communication Frequency",
-            "Check Mode": "Check Mode",
-            "Transmit Power": "Transmit Power",
-            "Air Data Rate": "Air Data Rate",
-            "Low Noise Amplifier Gain": "Low Noise Amplifier Gain",
-        }
-        for line in response.split("\r\n"):
+        print("\n" + "=" * 62)
+        print(f"{Colors.BOLD} USB NRF24L01+ DONGLE SYSTEM INFORMATION (AT?){Colors.RESET}")
+        print("=" * 62)
+        for line in response.splitlines():
             line = line.strip()
-            if not line or line in ["OK", "System Information"]:
+            if not line or line.startswith("System Information"):
+                continue
+            if line == "OK":
+                print(f"  {'Status':28}: {Colors.GREEN}OK{Colors.RESET}")
                 continue
             if ":" in line:
                 key, value = line.split(":", 1)
-                display_key = next((lbl for sub, lbl in key_map.items() if sub in key), key.strip())
-                print(f"{display_key:25}: {value.strip()}")
+                key = key.strip()
+                value = value.strip()
+                if "0x" in value:
+                    value += self._decode_hex_csv_ascii(value)
+                print(f"  {Colors.CYAN}{key:28}{Colors.RESET}: {Colors.GREEN}{value}{Colors.RESET}")
+            else:
+                print(f"  {line}")
+        print("=" * 62)
 
     def set_receive_address(self, address_bytes):
         """Set receive pipe address using AT+RXA command"""
@@ -255,20 +280,26 @@ class nRF24L01_Controller:
         self.ser.write(raw_bytes)
         self.ser.flush()
 
-    def send_command(self, robot_id, x=0, y=0, angle=0, vx=0, vy=0, w=0, kick=0, timestamp=None):
+    def wait_dongle_tx_complete(self, timeout=0.018, settle_sec=0.0015):
         """
-        Build and send a RobotCommand.
+        Wait for the USB dongle (CH340 + STC15) to finish its RF TX cycle and
+        output its 6-byte status frame (02 00 00 00 00 00) over UART.
+        """
+        t0 = time.perf_counter()
+        rcvd = 0
+        while rcvd < 6 and (time.perf_counter() - t0) < timeout:
+            waiting = self.ser.in_waiting
+            if waiting > 0:
+                rcvd += len(self.ser.read(waiting))
+            else:
+                time.sleep(0.0005)
+        if settle_sec > 0:
+            time.sleep(settle_sec)
+        self.ser.reset_input_buffer()
 
-        :param robot_id:  Target robot ID or ROBOT_ID_BROADCAST.
-        :param x:         Target pose X (mm).
-        :param y:         Target pose Y (mm).
-        :param angle:     Target orientation (0.01° units).
-        :param vx:        Target X velocity (mm/s).
-        :param vy:        Target Y velocity (mm/s).
-        :param w:         Target angular velocity (0.01 rad/s).
-        :param kick:      Kick strength (0-255).
-        :param timestamp: uint32 ms timestamp; auto-generated if None.
-        :returns:         The timestamp used (for RTT matching).
+    def send_command(self, robot_id, x=0, y=0, angle=0, vx=0, vy=0, w=0, kick=0, timestamp=None, wait_tx=True):
+        """
+        Build and send a RobotCommand (30B, fire-and-forget).
         """
         if timestamp is None:
             timestamp = int(time.time() * 1000) & 0xFFFFFFFF
@@ -285,6 +316,8 @@ class nRF24L01_Controller:
 
         encoded = cmd.encode()
         self.send_data(encoded)
+        if wait_tx:
+            self.wait_dongle_tx_complete()
         return timestamp
 
     def send_config(self, robot_id, config_flags, param=0):
@@ -306,6 +339,17 @@ class nRF24L01_Controller:
 
         print(f"{Colors.CYAN}[CONFIG] robot_id={robot_id} flags=0x{config_flags:02X} param={param}{Colors.RESET}")
         self.send_data(cfg.encode())
+
+    def send_telemetry_request(self, robot_id, timestamp=None):
+        """
+        Send a RobotTelemetryRequest (5 bytes) to request a RobotTelemetry reply.
+        """
+        if timestamp is None:
+            timestamp = int(time.time() * 1000) & 0xFFFFFFFF
+        req = ssl_robot_protocol_bp.RobotTelemetryRequest()
+        req.header = _make_header(MSG_TYPE_TELEMETRY_REQ, robot_id, timestamp)
+        self.send_data(req.encode())
+        return timestamp
 
     def receive_data(self, timeout=0.5):
         """
@@ -373,10 +417,12 @@ class CLIController:
         print(f"""
 {Colors.BOLD}Commands:{Colors.RESET}
   {{x:<mm>, y:<mm>, vx:<mm/s>, vy:<mm/s>, w:<0.01rad/s>, kick:<0-255>, id:<robot_id>}} — send RobotCommand
+  tel <robot_id>                                         — request RobotTelemetry
   set_id <target_id> <new_id>                            — assign new robot ID
   calibrate [<robot_id>|broadcast]                       — wheel + IMU calibration + PID tuning
   calibrate_mag [<robot_id>|broadcast]                   — mag calibration
   factory_reset [<robot_id>|broadcast]                   — full NVS erase + reboot
+  info                                                   — display USB dongle AT? system info
   help                                                   — show this help
   q / quit                                               — exit
 """)
@@ -397,6 +443,9 @@ class CLIController:
                     break
                 if raw.lower() == "help":
                     self._print_help()
+                    continue
+                if raw.lower() == "info":
+                    self.device.get_system_info()
                     continue
 
                 # Config shortcuts
@@ -430,6 +479,15 @@ class CLIController:
                     self.device.send_config(rid, CONFIG_FLAG_FACTORY_RESET)
                     continue
 
+                if raw.startswith("tel"):
+                    parts = raw.split()
+                    rid = self._parse_robot_id(parts[1]) if len(parts) > 1 else 0
+                    ts = self.device.send_telemetry_request(rid)
+                    print(f"{Colors.CYAN}→ [TEL_REQ] robot={rid} ts={ts}{Colors.RESET}", end="", flush=True)
+                    if not self.device.receive_data(timeout=0.200):
+                        print(f"\n{Colors.RED}✗ [TIMEOUT] Robot {rid} did not reply{Colors.RESET}")
+                    continue
+
                 # Motion command
                 x, y, vx, vy, w, kick, robot_id = 0, 0, 0, 0, 0, 0, 0
                 for p in raw.strip("{} ").split(","):
@@ -454,17 +512,8 @@ class CLIController:
                 timestamp = self.device.send_command(robot_id, x=x, y=y, vx=vx, vy=vy, w=w, kick=kick)
                 id_label = "BROADCAST" if robot_id == ROBOT_ID_BROADCAST else str(robot_id)
                 print(
-                    f"{Colors.CYAN}→ [CMD] robot={id_label} ts={timestamp} x={x} y={y} vx={vx} vy={vy} w={w} kick={kick}{Colors.RESET}",
-                    end="",
-                    flush=True,
+                    f"{Colors.CYAN}→ [CMD SENT] robot={id_label} ts={timestamp} x={x} y={y} vx={vx} vy={vy} w={w} kick={kick}{Colors.RESET}"
                 )
-
-                if robot_id != ROBOT_ID_BROADCAST:
-                    # Await a response from the robot firmware via NRF24 USB dongle, on average it takes 20ms. We will wait up to 200ms to be safe.
-
-                    self.device.receive_data(timeout=0.200)
-                else:
-                    print(f"  {Colors.YELLOW}(broadcast — no reply expected){Colors.RESET}")
 
             except KeyboardInterrupt:
                 break
