@@ -24,9 +24,7 @@
 
 namespace
 {
-// ============================================================================
-// 1. CONSTANTES DE CORES ANSI E TEMPORIZAÇÃO DE RÁDIO / UART
-// ============================================================================
+// CONSTANTES DE CORES ANSI E TEMPORIZAÇÃO DE RÁDIO / UART
 
 const std::string C_RED    = "\033[91m";
 const std::string C_GREEN  = "\033[92m";
@@ -61,9 +59,7 @@ std::string g_override_tx_addr = "";
 std::string g_override_rx_addr = "";
 int g_active_serial_fd         = -1;
 
-// ============================================================================
 // 2. FUNÇÕES UTILITÁRIAS DE CONVERSÃO E SATURAÇÃO
-// ============================================================================
 
 inline int get_active_guard_us()
 {
@@ -101,9 +97,7 @@ inline uint8_t clamp_u8(double v)
     return static_cast<uint8_t>(std::llround(clamped));
 }
 
-// ============================================================================
 // 3. FUNÇÕES DE TRANSMISSÃO E RECEPÇÃO DE PACOTES BITPROTO NA SERIAL
-// ============================================================================
 
 /**
  * @brief Codifica e envia um pacote RobotCommand (30 bytes, fire-and-forget) pela serial,
@@ -288,9 +282,7 @@ bool send_robot_config_packet(int fd, uint8_t robot_id, uint8_t config_flags, ui
     return (written == BYTES_LENGTH_ROBOT_CONFIG);
 }
 
-// ============================================================================
 // 4. COMANDOS AT DO DONGLE USB E TRADUÇÃO GB2312 -> INGLÊS / FORMATAÇÃO
-// ============================================================================
 
 /**
  * @brief Envia um comando AT ao dongle USB nRF24L01+ e traduz todas as strings em chinês
@@ -480,9 +472,7 @@ uint8_t parse_robot_id_token(const std::string& token)
     return static_cast<uint8_t>(std::stoi(token));
 }
 
-// ============================================================================
-// 5. BENCHMARK MULTI-ROBÔ COM RECONEXÃO AUTOMÁTICA (HOT-PLUG 1 Hz)
-// ============================================================================
+// 5. benchmark 
 
 /**
  * @brief Executa o benchmark de comunicação nRF24L01+ (equivalente C++ ao nrf24_benchmark.py).
@@ -797,9 +787,7 @@ void run_benchmark(
     std::cout << std::string(86, '=') << "\n";
 }
 
-// ============================================================================
 // 6. INTERFACE DE LINHA DE COMANDO INTERATIVA (CLI)
-// ============================================================================
 
 void print_cli_help()
 {
@@ -995,9 +983,7 @@ void run_interactive_cli(int fd)
 
 }  // namespace
 
-// ============================================================================
 // 7. IMPLEMENTAÇÃO DA CLASSE ROS 2 Nrf24HardwareBridge
-// ============================================================================
 
 std::string Find_Nrf24_port(uint16_t port_pid, uint16_t port_vid)
 {
@@ -1431,9 +1417,7 @@ void Nrf24HardwareBridge::configure_nrf24()
         tx_addr.c_str());
 }
 
-// ============================================================================
 // 8. PONTO DE ENTRADA (MODO ROS 2, CLI INTERATIVO, BENCHMARK E ONE-SHOT)
-// ============================================================================
 
 int main(int argc, char* argv[])
 {
