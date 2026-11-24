@@ -22,7 +22,6 @@
 #include <sstream>
 #include <unordered_map>
 #include <vector>
-
 namespace
 {
 // CONSTANTES DE CORES ANSI E TEMPORIZAÇÃO DE RÁDIO / UART
@@ -97,8 +96,65 @@ inline uint8_t clamp_u8(double v)
     const double clamped = std::clamp(clean, 0.0, 255.0);
     return static_cast<uint8_t>(std::llround(clamped));
 }
+inline int16_t clamp_i12(double v) {
+    return static_cast<int16_t>(std::llround(std::clamp(safe_finite(v, 0.0), -2048.0, 2047.0)));
+}
+inline int16_t clamp_i11(double v) {
+    return static_cast<int16_t>(std::llround(std::clamp(safe_finite(v, 0.0), -1024.0, 1023.0)));
+}
+inline uint8_t clamp_u7(double v) {
+    return static_cast<uint8_t>(std::llround(std::clamp(safe_finite(v, 0.0), 0.0, 127.0)));
+}
+bool send_team_vel_cmd_packet(int fd, const std::vector<struct SingleRobotVelCmd>& cmds, int guard_us) 
+{
+    if(fd < 0 || cmds.empty() || cmds.size() > 3) return false;
+    uint8_t tx_buf[BYTES_LENGTH_ROBOT_COMMAND] = {0};
+    struct Header hdr = {};
+    hdr.msg_type = MSG_TYPE_TEAM_VEL_CMD ;
+    hdr.robot_id = static_cast<uint8_t>(cmds.size());
+    hdr.timestamp = now_ms_u32();
+    EncodeHeader(&hdr, tx_buf);
+    for(size_t i = 0; i < cmds.size(); ++i) {
+        struct SingleRobotVelCmd cmd_copy = cmds[i];
+        EncodeSingleRobotVelCmd(&cmd_copy, tx_buf + BYTES_LENGTH_HEADER + i * BYTES_LENGTH_SINGLE_ROBOT_VEL_CMD);
+    }
+    const size_t total_len = BYTES_LENGTH_HEADER + cmds.size() * BYTES_LENGTH_SINGLE_ROBOT_VEL_CMD;
+    tcflush(fd, TCIFLUSH);
+    auto t_start = std::chrono::steady_clock::now();
+    ssize_t written = write(fd, tx_buf, total_len);
+    if (written != static_cast<ssize_t>(total_len)) {
+        return false;
+    }
+        tcdrain(fd);
+    
+    // Mesmo sincronismo de 6 bytes de status do dongle do send_robot_command_packet
+    const int max_wait_ms = std::max(18, guard_us / 1000);
+    int status_bytes_rcvd = 0;
+    while (status_bytes_rcvd < 6) {
+        int elapsed_ms = static_cast<int>( std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t_start).count());
+        int rem_ms = max_wait_ms - elapsed_ms;
+        if (rem_ms <= 0) break;
+    
+        struct pollfd pfd = {fd, POLLIN, 0};
+        int ret = poll(&pfd, 1, rem_ms);
+        if (ret > 0 && (pfd.revents & POLLIN)) {
+            uint8_t dump[32];
+            ssize_t n = read(fd, dump, sizeof(dump));
+            if (n > 0) status_bytes_rcvd += static_cast<int>(n);
+        } else if (ret <= 0) {
+            break;
+        }
+    
+    }
+    
+    if (DONGLE_SETTLE_US > 0) {
+        usleep(DONGLE_SETTLE_US);
+    }
+    tcflush(fd, TCIFLUSH);
+    return true;
+}
 
-// 3. FUNÇÕES DE TRANSMISSÃO E RECEPÇÃO DE PACOTES BITPROTO NA SERIAL
+ // 3. FUNÇÕES DE TRANSMISSÃO E RECEPÇÃO DE PACOTES BITPROTO NA SERIAL
 
 /**
  * @brief Codifica e envia um pacote RobotCommand (30 bytes, fire-and-forget) pela serial,
@@ -1033,8 +1089,9 @@ Nrf24HardwareBridge::Nrf24HardwareBridge(bool enable_ros_loop) : Node("nrf24_har
     this->declare_parameter("radio_rate", 3);
     this->declare_parameter("command_mode", std::string("velocity"));
     this->declare_parameter("telemetry_request_interval", 5);
-
+    
     std::string command_mode = this->get_parameter("command_mode").as_string();
+    use_team_vel_cmd_ = (command_mode != "point");
     telemetry_request_interval_ = this->get_parameter("telemetry_request_interval").as_int();
 
     // Busca automática da porta USB do adaptador CH340 (VID 1a86, PID 7523)
@@ -1162,19 +1219,16 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
         const double v_forward = vx_global * std::cos(theta) + vy_global * std::sin(theta);
         const double v_left = -vx_global * std::sin(theta) + vy_global * std::cos(theta);
 
-        struct RobotCommand cmd_bitproto = {};
-        cmd_bitproto.header.msg_type = MSG_TYPE_COMMAND;
-        cmd_bitproto.header.robot_id = robot_ros.id;
-        cmd_bitproto.header.timestamp =
-            static_cast<uint32_t>((this->now().nanoseconds() / 1000000ULL) & 0xFFFFFFFFULL);
-
-        cmd_bitproto.target_pose.x_v = clamp_i16(v_forward * 1000.0);
-        cmd_bitproto.target_pose.y_v = clamp_i16(v_left * 1000.0);
-        cmd_bitproto.target_pose.angular_vel = clamp_i16(w * 100.0);
-        cmd_bitproto.kick_velocity = clamp_u8(kick);
+        struct SingleRobotVelCmd vel = {};
+        vel.robot_id      = robot_ros.id & 0x0F;
+        vel.vx            = clamp_i12(v_forward * 1000.0); // int12: [-2048, +2047]
+        vel.vy            = clamp_i12(v_left * 1000.0);    // int12: [-2048, +2047]
+        vel.vw            = clamp_i11(w * 100.0);          // int11: [-1024, +1023]
+        vel.kick_velocity = clamp_u7(kick);                // uint7: [0, 127]
+        vel.flags         = 0;
 
         auto& slot = pending_commands_[robot_ros.id];
-        slot.cmd = cmd_bitproto;
+        slot.vel_cmd = vel;
         slot.updated_at = now;
         slot.pending = true;
     }
@@ -1208,22 +1262,50 @@ void Nrf24HardwareBridge::tx_timer_callback()
     if (serial_fd_ < 0 || pending_commands_.empty()) return;
 
     const auto now = std::chrono::steady_clock::now();
+    std::vector<uint8_t> sent_ids;
 
-    for (auto& [robot_id, entry] : pending_commands_) {
-        if (!entry.pending) continue;
-        entry.pending = false;
-
-        // Atualiza o timestamp exatamente no instante do envio pelo rádio
-        entry.cmd.header.timestamp =
-            static_cast<uint32_t>((this->now().nanoseconds() / 1000000ULL) & 0xFFFFFFFFULL);
-
-        // 1. Transmite o RobotCommand (30B, sincronizado pelo ACK 6B do dongle USB)
-        if (!transmit_command(entry.cmd)) {
-            continue;
+    // 1. Transmite os comandos pendentes
+    if (use_team_vel_cmd_) {
+        std::vector<struct SingleRobotVelCmd> batch;
+        for (auto& [robot_id, entry] : pending_commands_) {
+            if (!entry.pending) continue;
+            entry.pending = false;
+            batch.push_back(entry.vel_cmd);
         }
 
-        // 2. Verifica se está na hora de solicitar telemetria para este robô
-        if (telemetry_request_interval_ <= 0 || robot_id == ROBOT_ID_BROADCAST) {
+        constexpr size_t MAX_PER_PACKET = 3;
+        for (size_t i = 0; i < batch.size(); i += MAX_PER_PACKET) {
+            const size_t end = std::min(i + MAX_PER_PACKET, batch.size());
+            std::vector<struct SingleRobotVelCmd> chunk(batch.begin() + i, batch.begin() + end);
+            if (send_team_vel_cmd_packet(serial_fd_, chunk, get_active_guard_us())) {
+                for (const auto& c : chunk) {
+                    sent_ids.push_back(c.robot_id);
+                }
+            }
+        }
+    } else {
+        for (auto& [robot_id, entry] : pending_commands_) {
+            if (!entry.pending) continue;
+            entry.pending = false;
+
+            // Atualiza o timestamp exatamente no instante do envio pelo rádio
+            entry.cmd.header.timestamp =
+                static_cast<uint32_t>((this->now().nanoseconds() / 1000000ULL) & 0xFFFFFFFFULL);
+
+            // Transmite o RobotCommand (30B, sincronizado pelo ACK 6B do dongle USB)
+            if (transmit_command(entry.cmd)) {
+                sent_ids.push_back(robot_id);
+            }
+        }
+    }
+
+    // 2. Verifica se está na hora de solicitar telemetria para os robôs enviados
+    if (telemetry_request_interval_ <= 0) {
+        return;
+    }
+
+    for (uint8_t robot_id : sent_ids) {
+        if (robot_id == ROBOT_ID_BROADCAST) {
             continue;
         }
 

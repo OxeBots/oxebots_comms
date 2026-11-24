@@ -55,6 +55,7 @@ private:
     struct PendingRobotCommand
     {
         struct RobotCommand cmd = {};
+        struct SingleRobotVelCmd vel_cmd = {};
         std::chrono::steady_clock::time_point updated_at{};
         bool pending = false;
     };
@@ -73,6 +74,7 @@ private:
 
     int serial_fd_ = -1;
     int telemetry_request_interval_ = 5;
+    bool use_team_vel_cmd_ = true;
 
     std::map<uint8_t, PendingRobotCommand> pending_commands_;
     std::unordered_map<uint8_t, RobotTelemetryState> telemetry_states_;
