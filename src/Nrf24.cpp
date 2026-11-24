@@ -12,6 +12,7 @@
 #include <cctype>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -493,7 +494,14 @@ void run_benchmark(
     const std::string& target_spec = "3",
     double duration_s = 10.0,
     int tel_interval = 5,
-    int guard_us = FAST_GUARD_US)
+    int guard_us = FAST_GUARD_US,
+    int16_t vx_mms = 0,
+    int16_t vy_mms = 0,
+    int16_t vw = 0,
+    int16_t x = 0,
+    int16_t y = 0,
+    int16_t w = 0
+)
 {
     struct BenchStats
     {
@@ -612,12 +620,17 @@ void run_benchmark(
             uint8_t rid = robot_ids[idx];
             auto& st = stats[rid];
 
-            // 1. Envia RobotCommand (30B, fire-and-forget, sincronizado com status 6B do dongle)
+            // Envia RobotCommand (30B, fire-and-forget, sincronizado com status 6B do dongle)
             struct RobotCommand cmd = {};
             cmd.header.msg_type = MSG_TYPE_COMMAND;
             cmd.header.robot_id = rid;
             cmd.header.timestamp = now_ms_u32();
-            cmd.target_pose.x = static_cast<int16_t>(cycle_count % 1000);
+            cmd.target_pose.x_v = vx_mms;
+            cmd.target_pose.y_v = vy_mms;
+            cmd.target_pose.x = x;
+            cmd.target_pose.y = y;
+            cmd.target_pose.angular_vel = vw;
+            cmd.target_pose.angle = w;
             send_robot_command_packet(fd, cmd, guard_us);
             st.cmd_sent++;
 
