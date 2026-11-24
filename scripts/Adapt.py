@@ -8,6 +8,7 @@ import time
 import serial
 import serial.tools.list_ports
 from oxebots_interfaces.msg import RobotCmd
+from rclpy.qos import qos_profile_sensor_data
 import os
 
 try:
@@ -240,7 +241,7 @@ class Nrf24HardwareBridge(Node):
             RobotCmd,
             'robot_commands',
             self.robot_cmd_callback,
-            10
+            qos_profile_sensor_data
         )
         self.get_logger().info(f"{Colors.BOLD}ROS 2 -> NRF24L01 Bridge Started! Listening to /robot_commands{Colors.RESET}")
 
@@ -251,8 +252,9 @@ class Nrf24HardwareBridge(Node):
             w_scaled = int(robot.angular_velocity * 100)
             kick = int(robot.kick_speed)
 
+            # ID HARDCODADO PRA TESTE
             self.device.send_command(
-                robot_id=0,
+                robot_id=1,
                 vx=vx_mm,
                 vy=vy_mm,
                 w=w_scaled,

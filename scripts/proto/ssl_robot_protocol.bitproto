@@ -1,6 +1,7 @@
 // ssl_robot_protocol.bitproto
 // Multi-robot SSL protocol with message multiplexing, robot addressing, and config support.
-// Base station sends RobotCommand or RobotConfig; robot replies with RobotTelemetry (unicast only).
+// Base station sends RobotCommand, RobotConfig, or RobotTelemetryRequest.
+// Robot replies with RobotTelemetry ONLY when receiving RobotTelemetryRequest.
 
 proto ssl_robot_protocol;
 
@@ -39,14 +40,17 @@ const ROBOT_ID_BROADCAST = 15;
 // Message type constants (used in msg_type field of every outbound message)
 // ---------------------------------------------------------------------------
 
-// Motion command from base station to a specific robot or broadcast
+// Motion command from base station to a specific robot or broadcast (no reply)
 const MSG_TYPE_COMMAND = 0;
 
-// Configuration command (set ID, run calibration, etc.)
+// Configuration command (set ID, run calibration, etc. - no reply)
 const MSG_TYPE_CONFIG = 1;
 
 // Telemetry response from robot back to base station
 const MSG_TYPE_TELEMETRY = 2;
+
+// Explicit telemetry request from base station to a specific robot
+const MSG_TYPE_TELEMETRY_REQ = 3;
 
 // ---------------------------------------------------------------------------
 // Config flag constants (bitmask for config_flags field in RobotConfig)
@@ -121,10 +125,8 @@ message Pose {
 // Pose size: 6 × 2 bytes = 12 bytes
 
 // ---------------------------------------------------------------------------
-// RobotCommand — base station → robot (unicast or broadcast)
+// RobotCommand — base station → robot (unicast or broadcast, NEVER replies)
 // First byte is msg_type; robot peeks it to demux before full decode.
-// Broadcast (robot_id == ROBOT_ID_BROADCAST): execute, do NOT reply.
-// Unicast: execute and reply with RobotTelemetry.
 //
 // Size: 5 (Header) + 12 (target_pose) + 12 (vision_pose) + 1 (kick_velocity) = 30 bytes  ✓
 // ---------------------------------------------------------------------------
@@ -148,7 +150,17 @@ message RobotConfig {
 }
 
 // ---------------------------------------------------------------------------
-// RobotTelemetry — robot → base station (reply to unicast RobotCommand only)
+// RobotTelemetryRequest — base station → robot (unicast only)
+// Requests the target robot to immediately transmit a RobotTelemetry packet.
+//
+// Size: 5 (Header) = 5 bytes  ✓
+// ---------------------------------------------------------------------------
+message RobotTelemetryRequest {
+    Header header = 1;  // Message header (msg_type = MSG_TYPE_TELEMETRY_REQ, robot_id, timestamp)
+}
+
+// ---------------------------------------------------------------------------
+// RobotTelemetry — robot → base station (reply to RobotTelemetryRequest only)
 //
 // Size: 5 (Header) + 12 (robot_pose) + 1 (battery_percentage) + 2 (kicker_voltage) + 2 (error_flags) = 22 bytes  ✓
 // ---------------------------------------------------------------------------

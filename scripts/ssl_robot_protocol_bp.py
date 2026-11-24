@@ -67,16 +67,20 @@ ROBOT_ID_MAX: int = 10
 ROBOT_ID_BROADCAST: int = 15
 
 
-# Motion command from base station to a specific robot or broadcast
+# Motion command from base station to a specific robot or broadcast (no reply)
 MSG_TYPE_COMMAND: int = 0
 
 
-# Configuration command (set ID, run calibration, etc.)
+# Configuration command (set ID, run calibration, etc. - no reply)
 MSG_TYPE_CONFIG: int = 1
 
 
 # Telemetry response from robot back to base station
 MSG_TYPE_TELEMETRY: int = 2
+
+
+# Explicit telemetry request from base station to a specific robot
+MSG_TYPE_TELEMETRY_REQ: int = 3
 
 
 # Assign a new robot ID (new ID provided in robot_id field of RobotConfig)
@@ -315,10 +319,8 @@ class Pose(bp.MessageBase):
 class RobotCommand(bp.MessageBase):
     """
     ---------------------------------------------------------------------------
-    RobotCommand — base station → robot (unicast or broadcast)
+    RobotCommand — base station → robot (unicast or broadcast, NEVER replies)
     First byte is msg_type; robot peeks it to demux before full decode.
-    Broadcast (robot_id == ROBOT_ID_BROADCAST): execute, do NOT reply.
-    Unicast: execute and reply with RobotTelemetry.
     
     Size: 5 (Header) + 12 (target_pose) + 12 (vision_pose) + 1 (kick_velocity) = 30 bytes  ✓
     ---------------------------------------------------------------------------
@@ -467,10 +469,71 @@ class RobotConfig(bp.MessageBase):
 
 
 @dataclass
+class RobotTelemetryRequest(bp.MessageBase):
+    """
+    ---------------------------------------------------------------------------
+    RobotTelemetryRequest — base station → robot (unicast only)
+    Requests the target robot to immediately transmit a RobotTelemetry packet.
+    
+    Size: 5 (Header) = 5 bytes  ✓
+    ---------------------------------------------------------------------------
+    """
+    # Number of bytes to serialize class RobotTelemetryRequest
+    BYTES_LENGTH: ClassVar[int] = 5
+
+    header: Header = field(default_factory=Header) # 40bit
+
+    def __post_init__(self):
+        pass
+
+    @staticmethod
+    def dict_factory(kv_pairs):
+        return {k: v for k, v in kv_pairs if not k.startswith('_enum_field_proxy__')}
+
+    def bp_processor(self) -> bp.Processor:
+        field_processors: List[bp.Processor] = [
+            bp.MessageFieldProcessor(1, Header().bp_processor()),
+        ]
+        return bp.MessageProcessor(False, 40, field_processors)
+
+    def bp_set_byte(self, di: bp.DataIndexer, lshift: int, b: bp.byte) -> None:
+        return
+
+    def bp_get_byte(self, di: bp.DataIndexer, rshift: int) -> bp.byte:
+        return bp.byte(0)  # Won't reached
+
+    def bp_get_accessor(self, di: bp.DataIndexer) -> bp.Accessor:
+        if di.field_number == 1:
+            return self.header
+        return bp.NilAccessor() # Won't reached
+
+    def encode(self) -> bytearray:
+        """
+        Encode this object to bytearray.
+        """
+        s = bytearray(self.BYTES_LENGTH)
+        ctx = bp.ProcessContext(True, s)
+        self.bp_processor().process(ctx, bp.NIL_DATA_INDEXER, self)
+        return ctx.s
+
+    def decode(self, s: bytearray) -> None:
+        """
+        Decode given bytearray s to this object.
+        :param s: A bytearray with length at least `BYTES_LENGTH`.
+        """
+        assert len(s) >= self.BYTES_LENGTH, bp.NotEnoughBytes()
+        ctx = bp.ProcessContext(False, s)
+        self.bp_processor().process(ctx, bp.NIL_DATA_INDEXER, self)
+
+    def bp_process_int(self, di: bp.DataIndexer) -> None:
+        return
+
+
+@dataclass
 class RobotTelemetry(bp.MessageBase):
     """
     ---------------------------------------------------------------------------
-    RobotTelemetry — robot → base station (reply to unicast RobotCommand only)
+    RobotTelemetry — robot → base station (reply to RobotTelemetryRequest only)
     
     Size: 5 (Header) + 12 (robot_pose) + 1 (battery_percentage) + 2 (kicker_voltage) + 2 (error_flags) = 22 bytes  ✓
     ---------------------------------------------------------------------------
