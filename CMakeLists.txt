@@ -15,6 +15,7 @@ set(REQUIRED_PACKAGES
         Protobuf
         rclcpp
         geometry_msgs
+        std_msgs
 )
 
 set(REQUIRED_COMPONENTS

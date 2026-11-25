@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/u_int8.hpp>
 #include "oxebots_interfaces/msg/game_data.hpp"
 #include "oxebots_interfaces/msg/robot_cmd.hpp"
 #include "oxebots_interfaces/msg/robot_kinematic_pose.hpp"
@@ -77,6 +78,7 @@ private:
     bool use_team_vel_cmd_ = true;
 
     std::map<uint8_t, PendingRobotCommand> pending_commands_;
+    std::vector<uint8_t> pending_calibrations_;
     std::unordered_map<uint8_t, RobotTelemetryState> telemetry_states_;
     std::unordered_map<uint8_t, double> robot_orientations_;
 
@@ -85,6 +87,7 @@ private:
     void send_trajectory_setpoint(
         const oxebots_interfaces::msg::RobotTrajectorySetpoint::SharedPtr msg);
     void game_data_callback(const oxebots_interfaces::msg::GameData::SharedPtr msg);
+    void calibrate_robot_callback(const std_msgs::msg::UInt8::SharedPtr msg);
     void tx_timer_callback();
 
     // Métodos internos de rádio, serialização Bitproto e configuração AT
@@ -102,5 +105,6 @@ private:
     rclcpp::Subscription<oxebots_interfaces::msg::RobotTrajectorySetpoint>::SharedPtr
         trajectory_setpoint_sub_;
     rclcpp::Subscription<oxebots_interfaces::msg::GameData>::SharedPtr game_data_sub_;
+    rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr calibrate_robot_sub_;
     rclcpp::TimerBase::SharedPtr tx_timer_;
 };

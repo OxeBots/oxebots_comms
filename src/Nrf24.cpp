@@ -1128,6 +1128,12 @@ Nrf24HardwareBridge::Nrf24HardwareBridge(bool enable_ros_loop) : Node("nrf24_har
             rclcpp::SensorDataQoS(),
             std::bind(&Nrf24HardwareBridge::game_data_callback, this, std::placeholders::_1));
 
+        // Assina requisições de calibração de firmware (envia CONFIG_FLAG_RUN_CALIBRATION ao robô)
+        calibrate_robot_sub_ = this->create_subscription<std_msgs::msg::UInt8>(
+            "/nrf24/calibrate_robot",
+            10,
+            std::bind(&Nrf24HardwareBridge::calibrate_robot_callback, this, std::placeholders::_1));
+
         if (command_mode == "point") {
             trajectory_setpoint_sub_ =
                 this->create_subscription<oxebots_interfaces::msg::RobotTrajectorySetpoint>(
@@ -1177,6 +1183,16 @@ void Nrf24HardwareBridge::game_data_callback(
     }
 }
 
+void Nrf24HardwareBridge::calibrate_robot_callback(const std_msgs::msg::UInt8::SharedPtr msg)
+{
+    if (!msg) return;
+    pending_calibrations_.push_back(msg->data);
+    RCLCPP_INFO(
+        this->get_logger(),
+        "[CALIB] Requisição de calibração de firmware enfileirada para o robô %u.",
+        static_cast<unsigned>(msg->data));
+}
+
 struct Pose Nrf24HardwareBridge::kinematic_pose_to_bitproto(
     const oxebots_interfaces::msg::RobotKinematicPose& pose)
 {
@@ -1223,7 +1239,7 @@ void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::
         vel.robot_id      = robot_ros.id & 0x0F;
         vel.vx            = clamp_i12(v_forward * 1000.0); // int12: [-2048, +2047]
         vel.vy            = clamp_i12(v_left * 1000.0);    // int12: [-2048, +2047]
-        vel.vw            = clamp_i11(w * 100.0);          // int11: [-1024, +1023]
+        vel.vw            = -clamp_i11(w * 100.0);         // int11: [-1024, +1023]
         vel.kick_velocity = clamp_u7(kick);                // uint7: [0, 127]
         vel.flags         = 0;
 
@@ -1259,7 +1275,28 @@ void Nrf24HardwareBridge::send_trajectory_setpoint(
 
 void Nrf24HardwareBridge::tx_timer_callback()
 {
-    if (serial_fd_ < 0 || pending_commands_.empty()) return;
+    if (serial_fd_ < 0) return;
+
+    // 0. Transmite pedidos pendentes de calibração de firmware (CONFIG_FLAG_RUN_CALIBRATION)
+    if (!pending_calibrations_.empty()) {
+        auto calib_ids = std::move(pending_calibrations_);
+        pending_calibrations_.clear();
+        for (uint8_t robot_id : calib_ids) {
+            if (send_robot_config_packet(serial_fd_, robot_id, CONFIG_FLAG_RUN_CALIBRATION, 0)) {
+                RCLCPP_INFO(
+                    this->get_logger(),
+                    "[CALIB] Pacote CONFIG_FLAG_RUN_CALIBRATION enviado ao robô %u.",
+                    static_cast<unsigned>(robot_id));
+            } else {
+                RCLCPP_WARN(
+                    this->get_logger(),
+                    "[CALIB] Falha ao enviar CONFIG_FLAG_RUN_CALIBRATION ao robô %u.",
+                    static_cast<unsigned>(robot_id));
+            }
+        }
+    }
+
+    if (pending_commands_.empty()) return;
 
     const auto now = std::chrono::steady_clock::now();
     std::vector<uint8_t> sent_ids;
@@ -1516,7 +1553,7 @@ void Nrf24HardwareBridge::configure_nrf24()
 
 int main(int argc, char* argv[])
 {
-    rclcpp::init(argc, argv);
+    const std::vector<std::string> args = rclcpp::init_and_remove_ros_arguments(argc, argv);
 
     bool cli_mode = false;
     bool benchmark_mode = false;
@@ -1529,71 +1566,77 @@ int main(int argc, char* argv[])
     uint8_t oneshot_flags = 0;
     uint16_t oneshot_param = 0;
 
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--safe_ack" || arg == "--safe-ack") {
-            g_safe_ack_mode = true;
-        } else if (arg == "--cli" || arg == "--config") {
-            cli_mode = true;
-        } else if (arg == "--benchmark" || arg == "--bench") {
-            benchmark_mode = true;
-            if (i + 1 < argc && argv[i + 1][0] != '-') {
-                bench_target_spec = argv[++i];
+    try {
+        for (size_t i = 1; i < args.size(); ++i) {
+            const std::string& arg = args[i];
+            if (arg == "--safe_ack" || arg == "--safe-ack") {
+                g_safe_ack_mode = true;
+            } else if (arg == "--cli" || arg == "--config") {
+                cli_mode = true;
+            } else if (arg == "--benchmark" || arg == "--bench") {
+                benchmark_mode = true;
+                if (i + 1 < args.size() && !args[i + 1].empty() && args[i + 1][0] != '-') {
+                    bench_target_spec = args[++i];
+                }
+                if (i + 1 < args.size() && !args[i + 1].empty() && args[i + 1][0] != '-') {
+                    bench_duration = std::stod(args[++i]);
+                }
+                if (i + 1 < args.size() && !args[i + 1].empty() && args[i + 1][0] != '-') {
+                    bench_tel_interval = std::stoi(args[++i]);
+                }
+            } else if (arg == "--skip-config") {
+                g_skip_at_config = true;
+            } else if ((arg == "--freq" || arg == "-f") && i + 1 < args.size()) {
+                g_override_freq = std::stod(args[++i]);
+            } else if ((arg == "--rate" || arg == "-r") && i + 1 < args.size()) {
+                g_override_rate = std::stoi(args[++i]);
+            } else if ((arg == "--address" || arg == "-a") && i + 1 < args.size()) {
+                g_override_tx_addr = args[++i];
+            } else if (arg == "--set-id" && i + 2 < args.size()) {
+                one_shot_config = true;
+                oneshot_robot_id = parse_robot_id_token(args[++i]);
+                oneshot_flags = CONFIG_FLAG_SET_ID;
+                oneshot_param = static_cast<uint16_t>(std::stoi(args[++i]));
+            } else if (arg == "--calibrate" && i + 1 < args.size()) {
+                one_shot_config = true;
+                oneshot_robot_id = parse_robot_id_token(args[++i]);
+                oneshot_flags = CONFIG_FLAG_RUN_CALIBRATION;
+            } else if (arg == "--calibrate-mag" && i + 1 < args.size()) {
+                one_shot_config = true;
+                oneshot_robot_id = parse_robot_id_token(args[++i]);
+                oneshot_flags = CONFIG_FLAG_CALIBRATE_MAG;
+            } else if (arg == "--reset-nvs" && i + 1 < args.size()) {
+                one_shot_config = true;
+                oneshot_robot_id = parse_robot_id_token(args[++i]);
+                oneshot_flags = CONFIG_FLAG_RESET_NVS;
+            } else if (arg == "--factory-reset" && i + 1 < args.size()) {
+                one_shot_config = true;
+                oneshot_robot_id = parse_robot_id_token(args[++i]);
+                oneshot_flags = CONFIG_FLAG_FACTORY_RESET;
+            } else if (arg == "--help" || arg == "-h") {
+                print_cli_help();
+                std::cout
+                    << "\nFlags de linha de comando para ros2 run oxebots_comms nrf24_bridge_node:\n"
+                    << "  --cli / --config                            Abre o terminal interativo CLI\n"
+                    << "  --benchmark [robos] [duracao_s] [tel_int]   Executa o benchmark de rádio (ex: --benchmark 3 10 5)\n"
+                    << "  --safe_ack / --safe-ack                     Usa guarda de 22ms entre pacotes\n"
+                    << "  --set-id <id|broadcast> <new_id>            Altera o ID do robô e encerra\n"
+                    << "  --calibrate <id|broadcast>                  Inicia calibração completa e encerra\n"
+                    << "  --calibrate-mag <id|broadcast>              Inicia calibração do magnetômetro e encerra\n"
+                    << "  --reset-nvs <id|broadcast>                  Reseta NVS do robô e encerra\n"
+                    << "  --factory-reset <id|broadcast>              Apaga toda a NVS do robô e encerra\n"
+                    << "  --freq <GHz>                                Define a frequência (padrão: 2.476)\n"
+                    << "  --rate <1|2|3>                              Define a taxa de dados (1=250k, 2=1M, 3=2M)\n"
+                    << "  --address <5_chars>                         Define o TX address (padrão: ESP32)\n"
+                    << "  --skip-config                               Pula o envio de comandos AT no início\n";
+                rclcpp::shutdown();
+                return 0;
             }
-            if (i + 1 < argc && argv[i + 1][0] != '-') {
-                bench_duration = std::stod(argv[++i]);
-            }
-            if (i + 1 < argc && argv[i + 1][0] != '-') {
-                bench_tel_interval = std::stoi(argv[++i]);
-            }
-        } else if (arg == "--skip-config") {
-            g_skip_at_config = true;
-        } else if ((arg == "--freq" || arg == "-f") && i + 1 < argc) {
-            g_override_freq = std::stod(argv[++i]);
-        } else if ((arg == "--rate" || arg == "-r") && i + 1 < argc) {
-            g_override_rate = std::stoi(argv[++i]);
-        } else if ((arg == "--address" || arg == "-a") && i + 1 < argc) {
-            g_override_tx_addr = argv[++i];
-        } else if (arg == "--set-id" && i + 2 < argc) {
-            one_shot_config = true;
-            oneshot_robot_id = parse_robot_id_token(argv[++i]);
-            oneshot_flags = CONFIG_FLAG_SET_ID;
-            oneshot_param = static_cast<uint16_t>(std::stoi(argv[++i]));
-        } else if (arg == "--calibrate" && i + 1 < argc) {
-            one_shot_config = true;
-            oneshot_robot_id = parse_robot_id_token(argv[++i]);
-            oneshot_flags = CONFIG_FLAG_RUN_CALIBRATION;
-        } else if (arg == "--calibrate-mag" && i + 1 < argc) {
-            one_shot_config = true;
-            oneshot_robot_id = parse_robot_id_token(argv[++i]);
-            oneshot_flags = CONFIG_FLAG_CALIBRATE_MAG;
-        } else if (arg == "--reset-nvs" && i + 1 < argc) {
-            one_shot_config = true;
-            oneshot_robot_id = parse_robot_id_token(argv[++i]);
-            oneshot_flags = CONFIG_FLAG_RESET_NVS;
-        } else if (arg == "--factory-reset" && i + 1 < argc) {
-            one_shot_config = true;
-            oneshot_robot_id = parse_robot_id_token(argv[++i]);
-            oneshot_flags = CONFIG_FLAG_FACTORY_RESET;
-        } else if (arg == "--help" || arg == "-h") {
-            print_cli_help();
-            std::cout
-                << "\nFlags de linha de comando para ros2 run oxebots_comms nrf24_bridge_node:\n"
-                << "  --cli / --config                            Abre o terminal interativo CLI\n"
-                << "  --benchmark [robos] [duracao_s] [tel_int]   Executa o benchmark de rádio (ex: --benchmark 3 10 5)\n"
-                << "  --safe_ack / --safe-ack                     Usa guarda de 22ms entre pacotes\n"
-                << "  --set-id <id|broadcast> <new_id>            Altera o ID do robô e encerra\n"
-                << "  --calibrate <id|broadcast>                  Inicia calibração completa e encerra\n"
-                << "  --calibrate-mag <id|broadcast>              Inicia calibração do magnetômetro e encerra\n"
-                << "  --reset-nvs <id|broadcast>                  Reseta NVS do robô e encerra\n"
-                << "  --factory-reset <id|broadcast>              Apaga toda a NVS do robô e encerra\n"
-                << "  --freq <GHz>                                Define a frequência (padrão: 2.476)\n"
-                << "  --rate <1|2|3>                              Define a taxa de dados (1=250k, 2=1M, 3=2M)\n"
-                << "  --address <5_chars>                         Define o TX address (padrão: ESP32)\n"
-                << "  --skip-config                               Pula o envio de comandos AT no início\n";
-            rclcpp::shutdown();
-            return 0;
         }
+    } catch (const std::exception& e) {
+        std::cerr << "Argument Error : " << e.what() << std::endl;
+        rclcpp::shutdown();
+        return 1;
     }
 
     try {
