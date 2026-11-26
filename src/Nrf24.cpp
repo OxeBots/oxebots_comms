@@ -1,14 +1,8 @@
 #include "oxebots_comms/Nrf24.hpp"
-
-#include <fcntl.h>
-#include <libserialport.h>
-#include <linux/serial.h>
-#include <poll.h>
-#include <sys/ioctl.h>
-#include <termios.h>
-#include <unistd.h>
+#include "oxebots_comms/kick_scaling.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <chrono>
 #include <cmath>
@@ -20,11 +14,12 @@
 #include <map>
 #include <set>
 #include <sstream>
-#include <unordered_map>
+#include <stdexcept>
+#include <string>
 #include <vector>
+
 namespace
 {
-// CONSTANTES DE CORES ANSI E TEMPORIZAÇÃO DE RÁDIO / UART
 
 const std::string C_RED    = "\033[91m";
 const std::string C_GREEN  = "\033[92m";
@@ -34,37 +29,20 @@ const std::string C_CYAN   = "\033[96m";
 const std::string C_BOLD   = "\033[1m";
 const std::string C_RESET  = "\033[0m";
 
-// Nota de Arquitetura sobre o Dongle USB nRF24L01+ (CH340 + MCU STC15F104W @ 115200 baud):
-// O microcontrolador STC15 do adaptador USB implementa UART e SPI por software (bit-banging).
-// Ao receber um pacote pela serial (ex: 30 bytes de RobotCommand = ~2.6 ms), o STC15 aguarda
-// ~4 ms de silêncio na linha UART para detectar fim de quadro, chaveia o nRF24L01+ para PTX,
-// transmite via RF e, ao concluir, envia 6 bytes de status (02 00 00 00 00 00) de volta pela
-// UART (~12.5 ms no total).
-// Se o PC enviar o próximo pacote antes de o STC15 emitir esses 6 bytes de status, o STC15
-// está ocupado no SPI/RF e perde bytes da UART, corrompendo o tamanho do pacote!
-constexpr int FAST_GUARD_US             = 15000;  // 15ms: timeout máx aguardando ACK de 6B do dongle
-constexpr int SAFE_ACK_GUARD_US         = 22000;  // 22ms: modo conservador (--safe_ack)
-constexpr int DONGLE_SETTLE_US          = 1500;   // 1.5ms: folga após os 6B do dongle
-constexpr int TELEMETRY_TIMEOUT_MS      = 35;     // Timeout aguardando RobotTelemetry (22B) após Req
-constexpr int CLI_TELEMETRY_TIMEOUT_MS  = 150;    // Timeout para comando manual `tel <id>` no CLI
-constexpr int OFFLINE_PROBE_INTERVAL_MS = 1000;   // Robô offline é sondado a 1 Hz (hot-plug)
-constexpr int TX_TIMER_PERIOD_MS        = 15;     // Período do timer de transmissão ROS (~66 Hz)
+constexpr int TX_TIMER_PERIOD_MS        = 10;    // ~100 Hz TX loop
+constexpr int TELEMETRY_TIMEOUT_MS      = 20;    // ESP32 Base RTT is ~2-3 ms
+constexpr int CLI_TELEMETRY_TIMEOUT_MS  = 80;
+constexpr int OFFLINE_PROBE_INTERVAL_MS = 1000;  // 1 Hz hot-plug probe for offline robots
 
-// Flags globais configuráveis via argumentos de linha de comando
-bool g_safe_ack_mode           = false;
-bool g_skip_at_config          = false;
-double g_override_freq         = -1.0;
-int g_override_rate            = -1;
-std::string g_override_tx_addr = "";
-std::string g_override_rx_addr = "";
-int g_active_serial_fd         = -1;
+constexpr std::array<uint8_t, 4> DEFAULT_ADDR_SUFFIX = {0xC6, 0x9A, 0xD3, 0xE5};
+constexpr uint8_t DEFAULT_BASE_ADDR_LSB = 0xB4;
 
-// 2. FUNÇÕES UTILITÁRIAS DE CONVERSÃO E SATURAÇÃO
-
-inline int get_active_guard_us()
-{
-    return g_safe_ack_mode ? SAFE_ACK_GUARD_US : FAST_GUARD_US;
-}
+std::string g_override_port = "";
+int g_override_baud = -1;
+int g_override_channel = -1;
+int g_override_rate = -1;
+int g_override_pa = -1;
+bool g_skip_config = false;
 
 inline uint32_t now_ms_u32()
 {
@@ -90,230 +68,68 @@ inline int16_t clamp_i16(double v)
     return static_cast<int16_t>(std::llround(clamped));
 }
 
-inline uint8_t clamp_u8(double v)
+const char* rate_to_str(uint8_t rate)
 {
-    const double clean = safe_finite(v, 0.0);
-    const double clamped = std::clamp(clean, 0.0, 255.0);
-    return static_cast<uint8_t>(std::llround(clamped));
+    switch (rate) {
+        case BS_RATE_1MBPS:
+            return "1 Mbps";
+        case BS_RATE_2MBPS:
+            return "2 Mbps";
+        case BS_RATE_250KBPS:
+            return "250 Kbps";
+        default:
+            return "?";
+    }
 }
-inline int16_t clamp_i12(double v) {
-    return static_cast<int16_t>(std::llround(std::clamp(safe_finite(v, 0.0), -2048.0, 2047.0)));
-}
-inline int16_t clamp_i11(double v) {
-    return static_cast<int16_t>(std::llround(std::clamp(safe_finite(v, 0.0), -1024.0, 1023.0)));
-}
-inline uint8_t clamp_u7(double v) {
-    return static_cast<uint8_t>(std::llround(std::clamp(safe_finite(v, 0.0), 0.0, 127.0)));
-}
-bool send_team_vel_cmd_packet(int fd, const std::vector<struct SingleRobotVelCmd>& cmds, int guard_us) 
+
+const char* pa_to_str(uint8_t pa)
 {
-    if(fd < 0 || cmds.empty() || cmds.size() > 3) return false;
+    switch (pa) {
+        case 0:
+            return "PA_MIN (-18 dBm)";
+        case 1:
+            return "PA_LOW (-12 dBm)";
+        case 2:
+            return "PA_HIGH (-6 dBm)";
+        case 3:
+            return "PA_MAX (0 dBm)";
+        default:
+            return "?";
+    }
+}
+
+uint8_t parse_robot_id_token(std::string token)
+{
+    std::transform(token.begin(), token.end(), token.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    if (token == "broadcast" || token == "all" || token == "bcast") {
+        return ROBOT_ID_BROADCAST;
+    }
+    int id = std::stoi(token);
+    if (id == ROBOT_ID_BROADCAST) return ROBOT_ID_BROADCAST;
+    return static_cast<uint8_t>(std::clamp(id, 0, static_cast<int>(ROBOT_ID_MAX)));
+}
+
+bool send_robot_command(
+    oxebots_comms::BaseStationClient& client,
+    const struct RobotCommand& cmd,
+    struct BaseRfTxStatus* out_status = nullptr)
+{
     uint8_t tx_buf[BYTES_LENGTH_ROBOT_COMMAND] = {0};
-    struct Header hdr = {};
-    hdr.msg_type = MSG_TYPE_TEAM_VEL_CMD ;
-    hdr.robot_id = static_cast<uint8_t>(cmds.size());
-    hdr.timestamp = now_ms_u32();
-    EncodeHeader(&hdr, tx_buf);
-    for(size_t i = 0; i < cmds.size(); ++i) {
-        struct SingleRobotVelCmd cmd_copy = cmds[i];
-        EncodeSingleRobotVelCmd(&cmd_copy, tx_buf + BYTES_LENGTH_HEADER + i * BYTES_LENGTH_SINGLE_ROBOT_VEL_CMD);
-    }
-    const size_t total_len = BYTES_LENGTH_HEADER + cmds.size() * BYTES_LENGTH_SINGLE_ROBOT_VEL_CMD;
-    tcflush(fd, TCIFLUSH);
-    auto t_start = std::chrono::steady_clock::now();
-    ssize_t written = write(fd, tx_buf, total_len);
-    if (written != static_cast<ssize_t>(total_len)) {
-        return false;
-    }
-        tcdrain(fd);
-    
-    // Mesmo sincronismo de 6 bytes de status do dongle do send_robot_command_packet
-    const int max_wait_ms = std::max(18, guard_us / 1000);
-    int status_bytes_rcvd = 0;
-    while (status_bytes_rcvd < 6) {
-        int elapsed_ms = static_cast<int>( std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t_start).count());
-        int rem_ms = max_wait_ms - elapsed_ms;
-        if (rem_ms <= 0) break;
-    
-        struct pollfd pfd = {fd, POLLIN, 0};
-        int ret = poll(&pfd, 1, rem_ms);
-        if (ret > 0 && (pfd.revents & POLLIN)) {
-            uint8_t dump[32];
-            ssize_t n = read(fd, dump, sizeof(dump));
-            if (n > 0) status_bytes_rcvd += static_cast<int>(n);
-        } else if (ret <= 0) {
-            break;
-        }
-    
-    }
-    
-    if (DONGLE_SETTLE_US > 0) {
-        usleep(DONGLE_SETTLE_US);
-    }
-    tcflush(fd, TCIFLUSH);
-    return true;
+    struct RobotCommand copy = cmd;
+    EncodeRobotCommand(&copy, tx_buf);
+    const uint8_t flags = (cmd.header.robot_id == ROBOT_ID_BROADCAST) ? BS_TX_FLAG_NO_ACK : 0;
+    return client.send_rf_packet(
+        cmd.header.robot_id, tx_buf, BYTES_LENGTH_ROBOT_COMMAND, flags, out_status, 25);
 }
 
- // 3. FUNÇÕES DE TRANSMISSÃO E RECEPÇÃO DE PACOTES BITPROTO NA SERIAL
-
-/**
- * @brief Codifica e envia um pacote RobotCommand (30 bytes, fire-and-forget) pela serial,
- *        sincronizando o término da transmissão RF através dos 6 bytes de status do dongle.
- */
-bool send_robot_command_packet(int fd, const struct RobotCommand& cmd, int guard_us)
-{
-    if (fd < 0) return false;
-
-    // IMPORTANTE: As funções Encode* geradas pelo Bitproto em C utilizam OR bit-a-bit (|=).
-    // O buffer DEVE ser sempre inicializado com zeros ({0}), caso contrário lixo da stack
-    // corrompe os bits do cabeçalho (msg_type, robot_id) e do payload!
-    uint8_t tx_buf[BYTES_LENGTH_ROBOT_COMMAND] = {0};
-    struct RobotCommand cmd_copy = cmd;
-    EncodeRobotCommand(&cmd_copy, tx_buf);
-
-    tcflush(fd, TCIFLUSH);
-    auto t_start = std::chrono::steady_clock::now();
-
-    ssize_t written = write(fd, tx_buf, BYTES_LENGTH_ROBOT_COMMAND);
-    if (written != BYTES_LENGTH_ROBOT_COMMAND) {
-        return false;
-    }
-    tcdrain(fd);
-
-    // Aguarda os 6 bytes de confirmação de fim de TX do dongle (02 00 00 00 00 00)
-    const int max_wait_ms = std::max(18, guard_us / 1000);
-    int status_bytes_rcvd = 0;
-    while (status_bytes_rcvd < 6) {
-        int elapsed_ms = static_cast<int>(
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - t_start)
-                .count());
-        int rem_ms = max_wait_ms - elapsed_ms;
-        if (rem_ms <= 0) break;
-
-        struct pollfd pfd = {fd, POLLIN, 0};
-        int ret = poll(&pfd, 1, rem_ms);
-        if (ret > 0 && (pfd.revents & POLLIN)) {
-            uint8_t dump[32];
-            ssize_t n = read(fd, dump, sizeof(dump));
-            if (n > 0) {
-                status_bytes_rcvd += static_cast<int>(n);
-            }
-        } else if (ret <= 0) {
-            break;
-        }
-    }
-
-    if (DONGLE_SETTLE_US > 0) {
-        usleep(DONGLE_SETTLE_US);
-    }
-    tcflush(fd, TCIFLUSH);
-    return true;
-}
-
-/**
- * @brief Codifica e envia um RobotTelemetryRequest (5 bytes) para `robot_id` e aguarda
- *        o pacote RobotTelemetry (22 bytes) correspondente dentro de `timeout_ms`.
- */
-bool send_telemetry_request_and_wait(
-    int fd,
+bool send_robot_config(
+    oxebots_comms::BaseStationClient& client,
     uint8_t robot_id,
-    struct RobotTelemetry* out_tel,
-    double* out_rtt_ms,
-    int timeout_ms = TELEMETRY_TIMEOUT_MS)
-{
-    if (fd < 0 || robot_id == ROBOT_ID_BROADCAST) return false;
-
-    struct RobotTelemetryRequest req = {};
-    req.header.msg_type = MSG_TYPE_TELEMETRY_REQ;
-    req.header.robot_id = robot_id;
-    req.header.timestamp = now_ms_u32();
-
-    // IMPORTANTE: Buffer zerado obrigatório para Encode* do Bitproto
-    uint8_t tx_buf[BYTES_LENGTH_ROBOT_TELEMETRY_REQUEST] = {0};
-    EncodeRobotTelemetryRequest(&req, tx_buf);
-
-    tcflush(fd, TCIFLUSH);
-    auto t_start = std::chrono::steady_clock::now();
-
-    ssize_t written = write(fd, tx_buf, BYTES_LENGTH_ROBOT_TELEMETRY_REQUEST);
-    if (written != BYTES_LENGTH_ROBOT_TELEMETRY_REQUEST) {
-        return false;
-    }
-    tcdrain(fd);
-
-    std::vector<uint8_t> rx_buffer;
-    rx_buffer.reserve(64);
-    const uint8_t dongle_status[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-    while (true) {
-        auto now = std::chrono::steady_clock::now();
-        int elapsed_ms = static_cast<int>(
-            std::chrono::duration_cast<std::chrono::milliseconds>(now - t_start).count());
-        int remaining_ms = timeout_ms - elapsed_ms;
-        if (remaining_ms <= 0) {
-            break;
-        }
-
-        struct pollfd pfd = {fd, POLLIN, 0};
-        int ret = poll(&pfd, 1, remaining_ms);
-
-        if (ret > 0 && (pfd.revents & POLLIN)) {
-            uint8_t temp_buf[64];
-            ssize_t n = read(fd, temp_buf, sizeof(temp_buf));
-            if (n > 0) {
-                rx_buffer.insert(rx_buffer.end(), temp_buf, temp_buf + n);
-
-                // Remove sequências de 6 bytes de status de TX do dongle (02 00 00 00 00 00)
-                while (rx_buffer.size() >= 6 &&
-                       std::equal(
-                           std::begin(dongle_status),
-                           std::end(dongle_status),
-                           rx_buffer.begin())) {
-                    rx_buffer.erase(rx_buffer.begin(), rx_buffer.begin() + 6);
-                }
-
-                // Procura por um quadro válido de RobotTelemetry (22 bytes)
-                while (rx_buffer.size() >= BYTES_LENGTH_ROBOT_TELEMETRY) {
-                    uint8_t raw_msg_type = rx_buffer[0] & 0x0F;
-                    if (raw_msg_type != MSG_TYPE_TELEMETRY) {
-                        rx_buffer.erase(rx_buffer.begin());
-                        continue;
-                    }
-
-                    // IMPORTANTE: Struct zerada obrigatória para Decode* do Bitproto
-                    struct RobotTelemetry tel = {};
-                    DecodeRobotTelemetry(&tel, rx_buffer.data());
-                    rx_buffer.erase(
-                        rx_buffer.begin(), rx_buffer.begin() + BYTES_LENGTH_ROBOT_TELEMETRY);
-
-                    if (tel.header.robot_id == robot_id) {
-                        auto t_end = std::chrono::steady_clock::now();
-                        double rtt =
-                            std::chrono::duration<double, std::milli>(t_end - t_start).count();
-                        if (out_tel) *out_tel = tel;
-                        if (out_rtt_ms) *out_rtt_ms = rtt;
-                        if (DONGLE_SETTLE_US > 0) {
-                            usleep(DONGLE_SETTLE_US);
-                        }
-                        tcflush(fd, TCIFLUSH);
-                        return true;
-                    }
-                }
-            }
-        } else if (ret <= 0) {
-            break;
-        }
-    }
-
-    tcflush(fd, TCIFLUSH);
-    return false;
-}
-
-/**
- * @brief Codifica e envia um pacote RobotConfig (8 bytes) para configurar ID, calibração ou NVS.
- */
-bool send_robot_config_packet(int fd, uint8_t robot_id, uint8_t config_flags, uint16_t param = 0)
+    uint8_t config_flags,
+    uint16_t param = 0,
+    struct BaseRfTxStatus* out_status = nullptr)
 {
     struct RobotConfig cfg = {};
     cfg.header.msg_type = MSG_TYPE_CONFIG;
@@ -324,671 +140,569 @@ bool send_robot_config_packet(int fd, uint8_t robot_id, uint8_t config_flags, ui
 
     uint8_t buf[BYTES_LENGTH_ROBOT_CONFIG] = {0};
     EncodeRobotConfig(&cfg, buf);
-
-    tcflush(fd, TCIFLUSH);
-    ssize_t written = write(fd, buf, BYTES_LENGTH_ROBOT_CONFIG);
-    tcdrain(fd);
-    usleep(25000);
-    tcflush(fd, TCIFLUSH);
-
-    std::string id_str =
-        (robot_id == ROBOT_ID_BROADCAST) ? "BROADCAST(15)" : std::to_string(robot_id);
-    std::cout << C_CYAN << "[CONFIG ENVIADO] robot_id=" << id_str << " | flags=0x" << std::hex
-              << static_cast<int>(config_flags) << std::dec << " | param=" << param << C_RESET
-              << std::endl;
-    return (written == BYTES_LENGTH_ROBOT_CONFIG);
+    const uint8_t flags = (robot_id == ROBOT_ID_BROADCAST) ? BS_TX_FLAG_NO_ACK : 0;
+    return client.send_rf_packet(robot_id, buf, BYTES_LENGTH_ROBOT_CONFIG, flags, out_status, 30);
 }
 
-// 4. COMANDOS AT DO DONGLE USB E TRADUÇÃO GB2312 -> INGLÊS / FORMATAÇÃO
-
-/**
- * @brief Envia um comando AT ao dongle USB nRF24L01+ e traduz todas as strings em chinês
- *        (codificação GB2312 do firmware original do STC15) para inglês legível.
- */
-std::string send_at_and_translate(int fd, const std::string& cmd, int wait_ms = 500)
+bool send_telemetry_request_and_wait(
+    oxebots_comms::BaseStationClient& client,
+    uint8_t robot_id,
+    struct RobotTelemetry* out_tel,
+    double* out_rtt_ms,
+    struct BaseRfTxStatus* out_tx_status = nullptr,
+    int timeout_ms = TELEMETRY_TIMEOUT_MS)
 {
-    tcflush(fd, TCIOFLUSH);
-    std::string full_cmd = cmd + "\r\n";
-    ssize_t w = write(fd, full_cmd.c_str(), full_cmd.size());
-    (void)w;
-    tcdrain(fd);
+    if (robot_id == ROBOT_ID_BROADCAST) return false;
 
-    // Aguarda processamento inicial do comando AT pelo MCU STC15 do dongle
-    usleep(80000);
+    struct RobotTelemetryRequest req = {};
+    req.header.msg_type = MSG_TYPE_TELEMETRY_REQ;
+    req.header.robot_id = robot_id;
+    req.header.timestamp = now_ms_u32();
 
-    std::vector<uint8_t> resp;
-    auto start = std::chrono::steady_clock::now();
-    while (true) {
-        auto now = std::chrono::steady_clock::now();
-        int elapsed = static_cast<int>(
-            std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count());
-        if (elapsed >= wait_ms) break;
+    uint8_t tx_buf[BYTES_LENGTH_ROBOT_TELEMETRY_REQUEST] = {0};
+    EncodeRobotTelemetryRequest(&req, tx_buf);
 
-        struct pollfd pfd = {fd, POLLIN, 0};
-        int ret = poll(&pfd, 1, 50);
-        if (ret > 0 && (pfd.revents & POLLIN)) {
-            uint8_t buf[128];
-            ssize_t n = read(fd, buf, sizeof(buf));
-            if (n > 0) {
-                resp.insert(resp.end(), buf, buf + n);
-            }
-        } else if (ret == 0 && !resp.empty()) {
+    client.clear_rx_queue();
+    const auto t_start = std::chrono::steady_clock::now();
+
+    struct BaseRfTxStatus tx_st = {};
+    const bool sent = client.send_rf_packet(
+        robot_id,
+        tx_buf,
+        BYTES_LENGTH_ROBOT_TELEMETRY_REQUEST,
+        BS_TX_FLAG_EXPECT_REPLY,
+        &tx_st,
+        25);
+    if (out_tx_status != nullptr) *out_tx_status = tx_st;
+    if (!sent || tx_st.status != BS_TX_STATUS_OK) {
+        return false;
+    }
+
+    const auto deadline = t_start + std::chrono::milliseconds(timeout_ms);
+    while (std::chrono::steady_clock::now() < deadline) {
+        const int rem_ms = static_cast<int>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                deadline - std::chrono::steady_clock::now())
+                .count());
+        if (rem_ms <= 0) break;
+
+        struct BaseRfRx rx = {};
+        if (!client.wait_rf_rx(&rx, rem_ms)) {
             break;
         }
-    }
-
-    if (resp.empty()) return "";
-
-    std::string raw_str(resp.begin(), resp.end());
-
-    // Dicionário completo de sequências GB2312 emitidas pelo dongle nRF24L01+ (ordenadas da
-    // mais específica/longa para a mais curta para evitar substituições parciais incorretas):
-    const std::vector<std::pair<std::string, std::string>> dict = {
-        // Frases de confirmação de configuração (AT+BAUD, AT+RATE, AT+FREQ, AT+RXA/TXA, AT+CRC)
-        {"\xCD\xA8\xD1\xB6\xB2\xA8\xCC\xD8\xC2\xCA\xC9\xE8\xD6\xC3\xB3\xC9\xB9\xA6",
-         "Baud rate setting successful"},
-        {"\xCD\xA8\xD1\xB6\xC6\xB5\xC2\xCA\xC9\xE8\xD6\xC3\xB3\xC9\xB9\xA6",
-         "Communication frequency setting successful"},
-        {"\xB4\xAB\xCA\xE4\xCB\xD9\xC2\xCA\xC9\xE8\xD6\xC3\xB3\xC9\xB9\xA6",
-         "Data rate setting successful"},
-        {"\x43\x52\x43\xD0\xA3\xD1\xE9\xC4\xA3\xCA\xBD\xC9\xE8\xD6\xC3\xB3\xC9\xB9\xA6",
-         "CRC check mode setting successful"},
-        {"\xD0\xA3\xD1\xE9\xC4\xA3\xCA\xBD\xC9\xE8\xD6\xC3\xB3\xC9\xB9\xA6",
-         "Check mode setting successful"},
-        {"\xB5\xD8\xD6\xB7\xC9\xE8\xD6\xC3\xB3\xC9\xB9\xA6", "Address setting successful"},
-        // Campos do relatório AT?
-        {"\xCF\xB5\xCD\xB3\xD0\xC5\xCF\xA2", "System Information"},
-        {"\xB1\xBE\xB5\xD8\xBD\xD3\xCA\xD5\xB5\xD8\xD6\xB7\x30",
-         "Local Receive Address (Pipe 0)"},
-        {"\xB1\xBE\xB5\xD8\xBD\xD3\xCA\xD5\xB5\xD8\xD6\xB7", "Local Receive Address (RX)"},
-        {"\xC4\xBF\xB1\xEA\xB5\xD8\xD6\xB7", "Target Address (TX)"},
-        {"\xBF\xD5\xD6\xD0\xB4\xAB\xCA\xE4\xCB\xD9\xC2\xCA", "Air Data Rate"},
-        {"\xB5\xCD\xD4\xEB\xC9\xF9\xB7\xC5\xB4\xF3\xD4\xF6\xD2\xE6", "LNA Gain"},
-        {"\xCD\xA8\xD1\xB6\xC6\xB5\xC2\xCA", "Communication Frequency"},
-        {"\xD0\xA3\xD1\xE9\xC4\xA3\xCA\xBD", "Check Mode"},
-        {"\xB7\xA2\xC9\xE4\xB9\xA6\xC2\xCA", "Transmit Power"},
-        {"\xB4\xAB\xCA\xE4\xCB\xD9\xC2\xCA", "Data Rate"},
-        {"\xB2\xA8\xCC\xD8\xC2\xCA", "Baud Rate"},
-        // Valores e sufixos
-        {"\x43\x52\x43\xD0\xA3\xD1\xE9", "CRC Check"},
-        {"\xC9\xE8\xD6\xC3\xB3\xC9\xB9\xA6", "Setting successful"},
-        {"\xB3\xC9\xB9\xA6", "successful"},
-        {"\xBF\xAA\xC6\xF4", "Enabled"},
-        {"\xB9\xD8\xB1\xD5", "Disabled"},
-        {"\xD0\xA3\xD1\xE9", " Check"},
-        {"\xCE\xBB", "-bit "},
-        // Pontuação full-width chinesa (GB2312):
-        // '：' (\xA3\xBA) seguido de espaços (como em '目标地址：     0x45...') ou sozinho
-        {"\xA3\xBA     ", ": "},
-        {"\xA3\xBA", ": "},
-        // '！！' (\xA3\xA1\xA3\xA1) e '！' (\xA3\xA1)
-        {"\xA3\xA1\xA3\xA1", "!"},
-        {"\xA3\xA1", "!"},
-    };
-
-    for (const auto& kv : dict) {
-        size_t pos = 0;
-        while ((pos = raw_str.find(kv.first, pos)) != std::string::npos) {
-            raw_str.replace(pos, kv.first.length(), kv.second);
-            pos += kv.second.length();
+        if (rx.payload_len < BYTES_LENGTH_ROBOT_TELEMETRY) {
+            continue;
         }
-    }
-    return raw_str;
-}
-
-/**
- * @brief Converte uma lista de bytes hexadecimais (ex: "0x45,0x53,0x50,0x33,0x32")
- *        em sua representação ASCII legível (ex: "ESP32"), caso todos sejam imprimíveis.
- */
-std::string decode_hex_addr_to_ascii(const std::string& hex_csv)
-{
-    std::stringstream ss(hex_csv);
-    std::string token;
-    std::string ascii;
-    while (std::getline(ss, token, ',')) {
-        size_t first = token.find_first_not_of(" \t");
-        if (first == std::string::npos) continue;
-        token = token.substr(first);
-        try {
-            int val = std::stoi(token, nullptr, 16);
-            if (val >= 32 && val <= 126) {
-                ascii.push_back(static_cast<char>(val));
-            } else {
-                return "";
+        if ((rx.payload[0] & 0x0FU) != MSG_TYPE_TELEMETRY) {
+            continue;
+        }
+        struct RobotTelemetry tel = {};
+        DecodeRobotTelemetry(&tel, rx.payload);
+        if (tel.header.robot_id == robot_id) {
+            const auto t_end = std::chrono::steady_clock::now();
+            if (out_tel != nullptr) *out_tel = tel;
+            if (out_rtt_ms != nullptr) {
+                *out_rtt_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
             }
-        } catch (...) {
-            return "";
+            return true;
         }
     }
-    return ascii.length() == 5 ? (" (\"" + ascii + "\")") : "";
+    return false;
 }
 
-/**
- * @brief Consulta `AT?` no dongle USB e exibe uma tabela formatada e alinhada no terminal.
- */
-void print_dongle_system_info(int fd)
+void print_base_info(const struct BaseInfo& info, const std::string& port, int baud)
 {
-    std::string info = send_at_and_translate(fd, "AT?", 600);
-    if (info.empty()) {
-        std::cout << C_RED << "Sem resposta do dongle USB ao comando AT?." << C_RESET << std::endl;
-        return;
-    }
-
     std::cout << "\n"
-              << C_BOLD << std::string(64, '=') << "\n"
-              << " INFORMAÇÕES DO MÓDULO USB NRF24L01+ (AT?)\n"
-              << std::string(64, '=') << C_RESET << "\n";
+              << C_BOLD << std::string(68, '=') << "\n"
+              << " ESP32 BASE STATION (nRF24L01+ | " << port << " @ " << baud << " baud)\n"
+              << std::string(68, '=') << C_RESET << "\n"
+              << "  Protocolo       : v" << static_cast<int>(info.protocol_version) << "\n"
+              << "  Rádio           : "
+              << (info.radio_ready ? (C_GREEN + "PRONTO" + C_RESET) : (C_RED + "ERRO" + C_RESET))
+              << "\n"
+              << "  Canal RF        : " << static_cast<int>(info.channel) << " ("
+              << (2400 + static_cast<int>(info.channel)) << " MHz)\n"
+              << "  Taxa / Potência : " << rate_to_str(info.data_rate) << " | "
+              << pa_to_str(info.pa_level) << "\n"
+              << "  Retransmissão   : ARD=" << static_cast<int>(info.retransmit_delay) << " ("
+              << ((static_cast<int>(info.retransmit_delay) + 1) * 250)
+              << " us) | ARC=" << static_cast<int>(info.retransmit_count) << "\n"
+              << "  Contadores      : TX OK=" << info.tx_ok_count
+              << " | TX Fail=" << info.tx_fail_count << " | RX=" << info.rx_count
+              << " | Watchdog Reinits=" << info.radio_reinit_count << "\n"
+              << "  Endereço Base   : LSB=0x" << std::hex << std::uppercase << std::setw(2)
+              << std::setfill('0') << static_cast<int>(info.base_addr_lsb) << " + {";
+    for (int i = 0; i < 4; ++i) {
+        std::cout << "0x" << std::setw(2) << static_cast<int>(info.addr_suffix[i])
+                  << (i < 3 ? "," : "");
+    }
+    std::cout << "}" << std::dec << std::setfill(' ') << "\n"
+              << std::string(68, '=') << "\n"
+              << std::endl;
+}
 
-    std::stringstream ss(info);
-    std::string line;
-    while (std::getline(ss, line)) {
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
-        }
-        size_t first = line.find_first_not_of(" \t");
-        if (first == std::string::npos) continue;
-        line = line.substr(first);
+void print_scan_result(const struct BaseScanResult& scan)
+{
+    std::cout << "\n"
+              << C_BOLD << "=== SCAN DE ESPECTRO RF (RPD >= -64 dBm) ===" << C_RESET << "\n"
+              << "  Faixa escaneada : canais " << static_cast<int>(scan.start_channel) << ".."
+              << (static_cast<int>(scan.start_channel) + static_cast<int>(scan.count) - 1) << "\n"
+              << "  Melhor canal    : " << C_GREEN << static_cast<int>(scan.best_channel) << " ("
+              << (2400 + static_cast<int>(scan.best_channel)) << " MHz)" << C_RESET << "\n\n";
 
-        if (line == "OK") {
-            std::cout << "  " << std::left << std::setw(30) << "Status"
-                      << ": " << C_GREEN << "OK" << C_RESET << "\n";
+    for (uint8_t i = 0; i < scan.count; ++i) {
+        const int ch = static_cast<int>(scan.start_channel) + i;
+        const int pct = scan.busy_pct[i];
+        if (pct == 0 && ch != scan.best_channel && (ch % 10 != 0)) {
             continue;
         }
-        if (line.rfind("System Information", 0) == 0) {
-            continue;
-        }
+        const int bars = pct / 5;
+        const std::string& color = (pct >= 50) ? C_RED : (pct >= 15 ? C_YELLOW : C_GREEN);
+        std::cout << "  ch " << std::setw(3) << ch << " (" << (2400 + ch) << " MHz) ["
+                  << std::setw(3) << pct << "%] " << color << std::string(bars, '#') << C_RESET
+                  << ((ch == scan.best_channel) ? (" " + C_CYAN + "<-- RECOMENDADO" + C_RESET) : "")
+                  << "\n";
+    }
+    std::cout << std::endl;
+}
 
-        size_t colon = line.find(':');
-        if (colon != std::string::npos) {
-            std::string key = line.substr(0, colon);
-            std::string val = line.substr(colon + 1);
-            size_t kw = key.find_last_not_of(" \t");
-            if (kw != std::string::npos) key = key.substr(0, kw + 1);
-            size_t vw = val.find_first_not_of(" \t");
-            val = (vw != std::string::npos) ? val.substr(vw) : "";
+bool switch_channel_coordinated(
+    oxebots_comms::BaseStationClient& client, uint8_t new_channel, bool notify_robots)
+{
+    if (new_channel > 125) {
+        std::cout << C_RED << "Canal inválido (use 0..125)." << C_RESET << std::endl;
+        return false;
+    }
 
-            // Se for um endereço hexadecimal (0x..), anexa também a string ASCII equivalente
-            if (val.find("0x") != std::string::npos) {
-                val += decode_hex_addr_to_ascii(val);
+    struct BaseInfo info = {};
+    if (!client.get_info(&info)) {
+        std::cout << C_RED << "Não foi possível ler info atual da Base Station." << C_RESET
+                  << std::endl;
+        return false;
+    }
+
+    if (notify_robots) {
+        std::cout << C_CYAN << "Notificando robôs para migrar do canal "
+                  << static_cast<int>(info.channel) << " para o canal "
+                  << static_cast<int>(new_channel) << "..." << C_RESET << std::endl;
+        for (uint8_t id = 0; id <= ROBOT_ID_MAX; ++id) {
+            struct BaseRfTxStatus st = {};
+            if (send_robot_config(client, id, CONFIG_FLAG_SET_CHANNEL, new_channel, &st) &&
+                st.status == BS_TX_STATUS_OK) {
+                std::cout << C_GREEN << "  ✓ Robô " << static_cast<int>(id)
+                          << " confirmou troca (ACK em " << st.tx_time_us << " us)" << C_RESET
+                          << "\n";
             }
-
-            std::cout << "  " << C_CYAN << std::left << std::setw(30) << key << C_RESET << ": "
-                      << C_GREEN << val << C_RESET << "\n";
-        } else {
-            std::cout << "  " << line << "\n";
+        }
+        // Extra broadcast copies for any robot not yet assigned/answering unicast.
+        for (int i = 0; i < 3; ++i) {
+            send_robot_config(client, ROBOT_ID_BROADCAST, CONFIG_FLAG_SET_CHANNEL, new_channel);
         }
     }
-    std::cout << C_BOLD << std::string(64, '=') << C_RESET << std::endl;
-}
 
-uint8_t parse_robot_id_token(const std::string& token)
-{
-    if (token == "broadcast" || token == "BROADCAST" || token == "all" || token == "15") {
-        return ROBOT_ID_BROADCAST;
+    struct BaseRadioConfig cfg = {};
+    cfg.channel = new_channel;
+    cfg.data_rate = info.data_rate;
+    cfg.pa_level = info.pa_level;
+    cfg.retransmit_delay = info.retransmit_delay;
+    cfg.retransmit_count = info.retransmit_count;
+    cfg.persist_nvs = 1;
+    std::memcpy(cfg.addr_suffix, info.addr_suffix, 4);
+    cfg.base_addr_lsb = info.base_addr_lsb;
+
+    struct BaseInfo updated = {};
+    if (!client.set_config(cfg, &updated)) {
+        std::cout << C_RED << "Falha ao aplicar novo canal na Base Station." << C_RESET
+                  << std::endl;
+        return false;
     }
-    return static_cast<uint8_t>(std::stoi(token));
+    std::cout << C_GREEN << "✓ Base Station migrada para o canal "
+              << static_cast<int>(updated.channel) << " (" << (2400 + updated.channel)
+              << " MHz, salvo em NVS)." << C_RESET << std::endl;
+    return true;
 }
 
-// 5. benchmark 
-
-/**
- * @brief Executa o benchmark de comunicação nRF24L01+ (equivalente C++ ao nrf24_benchmark.py).
- *
- * Comportamento de Sondagem e Hot-Plug (Reconexão Automática):
- * - Antes de iniciar o loop, sonda os robôs para identificar quais já estão ligados.
- * - Robôs que iniciam desligados (ou que perdem 5 telemetrias seguidas durante o teste)
- *   são marcados como `OFFLINE` (`unreachable = true`), evitando travar o loop por 35ms
- *   a cada `tel_interval` comandos.
- * - Entretanto, todo robô `OFFLINE` continua recebendo `RobotCommand` normalmente E é
- *   sondado com um `RobotTelemetryRequest` a cada 1 segundo (1 Hz).
- * - Assim que o usuário liga um robô no meio do benchmark, a sondagem de 1 Hz recebe a
- *   resposta, marca o robô como `ONLINE` automaticamente e passa a requisitar telemetria
- *   normalmente a cada `tel_interval` comandos!
- */
-void run_benchmark(
-    int fd,
-    const std::string& target_spec = "3",
-    double duration_s = 10.0,
-    int tel_interval = 5,
-    int guard_us = FAST_GUARD_US,
-    int16_t vx_mms = 0,
-    int16_t vy_mms = 0,
-    int16_t vw = 0,
-    int16_t x = 0,
-    int16_t y = 0,
-    int16_t w = 0
-)
+std::vector<uint8_t> parse_benchmark_targets(const std::string& spec)
 {
-    struct BenchStats
-    {
-        int cmd_sent = 0;
-        int tel_req_sent = 0;
-        int tel_received = 0;
-        int tel_lost = 0;
-        int consecutive_losses = 0;
-        bool unreachable = false;
-        bool ever_online = false;
-        std::chrono::steady_clock::time_point last_tel_attempt{};
-        std::vector<double> rtts_ms;
-        int last_batt = -1;
-        double last_kicker_v = 0.0;
-    };
+    std::vector<uint8_t> ids;
+    if (spec.empty()) return {0, 1, 2};
 
-    std::vector<uint8_t> robot_ids;
-    std::set<uint8_t> initially_online;
-    tcflush(fd, TCIOFLUSH);
-
-    // 1. Determina a lista de robôs do benchmark e realiza sondagem inicial
-    if (target_spec.find(',') != std::string::npos || target_spec.rfind("id=", 0) == 0) {
-        std::string clean_spec =
-            (target_spec.rfind("id=", 0) == 0) ? target_spec.substr(3) : target_spec;
-        std::stringstream ss(clean_spec);
+    std::string s = spec;
+    if (s.rfind("id=", 0) == 0) {
+        s = s.substr(3);
+    }
+    if (s.find(',') != std::string::npos) {
+        std::stringstream ss(s);
         std::string item;
         while (std::getline(ss, item, ',')) {
             if (!item.empty()) {
-                robot_ids.push_back(static_cast<uint8_t>(std::stoi(item)));
-            }
-        }
-        std::cout << C_CYAN << "Sondando robôs selecionados..." << C_RESET << std::flush;
-        for (uint8_t probe_id : robot_ids) {
-            struct RobotTelemetry tel = {};
-            double rtt = 0.0;
-            if (send_telemetry_request_and_wait(fd, probe_id, &tel, &rtt, 45)) {
-                initially_online.insert(probe_id);
-            }
-        }
-    } else {
-        int num_robots = std::max(1, std::stoi(target_spec));
-        std::cout << C_CYAN << "Sondando robôs ligados (IDs 0 a 5)..." << C_RESET << std::flush;
-        for (uint8_t probe_id = 0; probe_id <= 5; ++probe_id) {
-            struct RobotTelemetry tel = {};
-            double rtt = 0.0;
-            if (send_telemetry_request_and_wait(fd, probe_id, &tel, &rtt, 45)) {
-                initially_online.insert(probe_id);
-                if (static_cast<int>(robot_ids.size()) < num_robots) {
-                    robot_ids.push_back(probe_id);
+                uint8_t id = parse_robot_id_token(item);
+                if (id <= ROBOT_ID_MAX && std::find(ids.begin(), ids.end(), id) == ids.end()) {
+                    ids.push_back(id);
                 }
             }
         }
-        for (uint8_t cand = 0; static_cast<int>(robot_ids.size()) < num_robots && cand <= 10;
-             ++cand) {
-            if (std::find(robot_ids.begin(), robot_ids.end(), cand) == robot_ids.end()) {
-                robot_ids.push_back(cand);
-            }
-        }
-        std::sort(robot_ids.begin(), robot_ids.end());
+        return ids;
     }
 
-    if (!initially_online.empty()) {
-        std::cout << " " << C_GREEN << "✓ Detectados online: [";
-        size_t idx = 0;
-        for (uint8_t oid : initially_online) {
-            std::cout << static_cast<int>(oid) << (++idx < initially_online.size() ? ", " : "");
+    int count = std::stoi(s);
+    if (count <= 0) count = 1;
+    if (count > static_cast<int>(ROBOT_ID_MAX) + 1) count = ROBOT_ID_MAX + 1;
+    for (int i = 0; i < count; ++i) {
+        ids.push_back(static_cast<uint8_t>(i));
+    }
+    return ids;
+}
+
+struct BenchStats
+{
+    int cmd_sent = 0;
+    int cmd_ack_ok = 0;
+    int cmd_retries_sum = 0;
+    double tx_us_sum = 0.0;
+    int tel_req_sent = 0;
+    int tel_received = 0;
+    int consecutive_losses = 0;
+    bool unreachable = false;
+    std::chrono::steady_clock::time_point last_tel_attempt{};
+    std::vector<double> rtts_ms;
+    uint8_t last_battery = 0;
+    double last_kicker_v = 0.0;
+};
+
+void run_benchmark(
+    oxebots_comms::BaseStationClient& client,
+    const std::string& target_spec,
+    double duration_s,
+    int tel_interval)
+{
+    std::vector<uint8_t> robot_ids = parse_benchmark_targets(target_spec);
+    if (robot_ids.empty()) robot_ids = {0};
+
+    std::set<uint8_t> online;
+    std::cout << C_CYAN << "Sondando robôs online (IDs 0.." << static_cast<int>(ROBOT_ID_MAX)
+              << ")..." << C_RESET << std::flush;
+    for (uint8_t id = 0; id <= ROBOT_ID_MAX; ++id) {
+        struct RobotTelemetry tel = {};
+        double rtt = 0.0;
+        if (send_telemetry_request_and_wait(client, id, &tel, &rtt, nullptr, 30)) {
+            online.insert(id);
+        }
+    }
+    if (!online.empty()) {
+        std::cout << " " << C_GREEN << "✓ Online: [";
+        bool first = true;
+        for (uint8_t id : online) {
+            if (!first) std::cout << ", ";
+            std::cout << static_cast<int>(id);
+            first = false;
         }
         std::cout << "]" << C_RESET << "\n";
     } else {
-        std::cout << " " << C_YELLOW
-                  << "(nenhum respondeu agora — sondagem automática de 1 Hz ativa!)" << C_RESET
-                  << "\n";
+        std::cout << " " << C_YELLOW << "(nenhum respondeu agora)" << C_RESET << "\n";
     }
 
-    if (robot_ids.empty()) {
-        robot_ids.push_back(0);
-    }
-
-    const int num_robots = static_cast<int>(robot_ids.size());
-    const auto start_bench = std::chrono::steady_clock::now();
+    const auto start = std::chrono::steady_clock::now();
     std::map<uint8_t, BenchStats> stats;
-    std::ostringstream ids_oss;
-
-    for (size_t i = 0; i < robot_ids.size(); ++i) {
-        uint8_t rid = robot_ids[i];
+    for (uint8_t rid : robot_ids) {
         BenchStats st{};
-        const bool is_on = (initially_online.count(rid) > 0);
-        st.ever_online = is_on;
-        st.unreachable = !is_on;  // Se começou desligado, já inicia em modo sondagem 1 Hz
-        st.last_tel_attempt = start_bench;
+        st.unreachable = (online.count(rid) == 0);
+        st.last_tel_attempt = start;
         stats[rid] = st;
-        ids_oss << static_cast<int>(rid) << (i + 1 < robot_ids.size() ? ", " : "");
     }
 
     std::cout << "\n"
-              << C_BOLD << std::string(80, '=') << "\n"
-              << " INICIANDO BENCHMARK NRF24 C++ (Robôs: [" << ids_oss.str()
-              << "] | Duração: " << duration_s << "s)\n"
-              << " Protocolo: RobotCommand (30B s/ ACK) + RobotTelemetryRequest (5B a cada "
-              << tel_interval << " cmds)\n"
-              << " Sincronismo TX: ACK 6B do Dongle (máx " << (guard_us / 1000.0)
-              << "ms) | Sondagem Offline (Hot-Plug): 1 Hz\n"
-              << std::string(80, '=') << C_RESET << "\n\n";
+              << C_BOLD << std::string(90, '=') << "\n"
+              << " BENCHMARK ESP32 BASE STATION (Duração: " << duration_s
+              << "s | Telemetria a cada " << tel_interval << " cmds)\n"
+              << std::string(90, '=') << C_RESET << "\n\n";
 
-    tcflush(fd, TCIOFLUSH);
-    auto last_print = start_bench;
-    int cycle_count = 0;
-
+    int cycles = 0;
+    auto last_print = start;
     while (true) {
-        auto now = std::chrono::steady_clock::now();
-        double elapsed_s = std::chrono::duration<double>(now - start_bench).count();
+        const auto now = std::chrono::steady_clock::now();
+        const double elapsed_s = std::chrono::duration<double>(now - start).count();
         if (elapsed_s >= duration_s) break;
 
-        cycle_count++;
+        cycles++;
         for (size_t idx = 0; idx < robot_ids.size(); ++idx) {
-            uint8_t rid = robot_ids[idx];
+            const uint8_t rid = robot_ids[idx];
             auto& st = stats[rid];
 
-            // Envia RobotCommand (30B, fire-and-forget, sincronizado com status 6B do dongle)
             struct RobotCommand cmd = {};
             cmd.header.msg_type = MSG_TYPE_COMMAND;
             cmd.header.robot_id = rid;
             cmd.header.timestamp = now_ms_u32();
-            cmd.target_pose.x_v = vx_mms;
-            cmd.target_pose.y_v = vy_mms;
-            cmd.target_pose.x = x;
-            cmd.target_pose.y = y;
-            cmd.target_pose.angular_vel = vw;
-            cmd.target_pose.angle = w;
-            send_robot_command_packet(fd, cmd, guard_us);
-            st.cmd_sent++;
 
-            // 2. Verifica se deve enviar RobotTelemetryRequest (5B) para este robô:
-            //    - Se estiver ONLINE: a cada `tel_interval` comandos (escalonado por `idx`)
-            //    - Se estiver OFFLINE: sonda a cada 1000 ms (1 Hz) para detectar hot-plug!
-            if (tel_interval <= 0) {
-                continue;
-            }
-
-            const auto step_now = std::chrono::steady_clock::now();
-            bool should_request_tel = false;
-
-            if (!st.unreachable) {
-                should_request_tel = ((st.cmd_sent + static_cast<int>(idx)) % tel_interval == 0);
-            } else {
-                auto ms_since_probe = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                          step_now - st.last_tel_attempt)
-                                          .count();
-                if (ms_since_probe >= OFFLINE_PROBE_INTERVAL_MS) {
-                    should_request_tel = true;
+            struct BaseRfTxStatus tx_st = {};
+            if (send_robot_command(client, cmd, &tx_st)) {
+                st.cmd_sent++;
+                if (tx_st.status == BS_TX_STATUS_OK) {
+                    st.cmd_ack_ok++;
+                    st.cmd_retries_sum += tx_st.retries;
+                    st.tx_us_sum += tx_st.tx_time_us;
                 }
             }
 
-            if (!should_request_tel) {
-                continue;
+            if (tel_interval <= 0) continue;
+
+            const auto step_now = std::chrono::steady_clock::now();
+            bool do_tel = false;
+            if (!st.unreachable) {
+                do_tel = ((st.cmd_sent + static_cast<int>(idx)) % tel_interval == 0);
+            } else {
+                const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    step_now - st.last_tel_attempt)
+                                    .count();
+                do_tel = (ms >= OFFLINE_PROBE_INTERVAL_MS);
             }
+            if (!do_tel) continue;
 
             st.last_tel_attempt = step_now;
-            const bool was_unreachable = st.unreachable;
-
             struct RobotTelemetry tel = {};
             double rtt_ms = 0.0;
-            if (send_telemetry_request_and_wait(fd, rid, &tel, &rtt_ms, TELEMETRY_TIMEOUT_MS)) {
-                st.tel_req_sent++;
+            st.tel_req_sent++;
+            if (send_telemetry_request_and_wait(
+                    client, rid, &tel, &rtt_ms, nullptr, TELEMETRY_TIMEOUT_MS)) {
                 st.tel_received++;
                 st.consecutive_losses = 0;
                 st.unreachable = false;
-                st.ever_online = true;
                 st.rtts_ms.push_back(rtt_ms);
-                st.last_batt = tel.battery_percentage;
+                st.last_battery = tel.battery_percentage;
                 st.last_kicker_v = tel.kicker_voltage / 100.0;
-
-                if (was_unreachable) {
-                    std::cout << "\n"
-                              << C_GREEN << "✓ [HOT-PLUG] Robô " << static_cast<int>(rid)
-                              << " detectado ONLINE! Telemetria normal ativada (a cada "
-                              << tel_interval << " cmds)." << C_RESET << "\n";
-                }
             } else {
-                // Só contabiliza perda na estatística se o robô estava no modo ONLINE normal.
-                // Sondagens de 1 Hz enquanto o robô está desligado não inflam a taxa de perda!
-                if (!was_unreachable) {
-                    st.tel_req_sent++;
-                    st.tel_lost++;
-                    st.consecutive_losses++;
-                    if (st.consecutive_losses >= 5) {
-                        st.unreachable = true;
-                        std::cout << "\n"
-                                  << C_YELLOW << "[AVISO] Robô " << static_cast<int>(rid)
-                                  << " sem resposta após 5 tentativas — entrando em sondagem 1 Hz."
-                                  << C_RESET << "\n";
-                    }
-                }
+                st.consecutive_losses++;
+                if (st.consecutive_losses >= 2) st.unreachable = true;
             }
         }
 
-        auto after_cycle = std::chrono::steady_clock::now();
-        if (std::chrono::duration<double>(after_cycle - last_print).count() >= 0.25) {
-            double total_elapsed = std::chrono::duration<double>(after_cycle - start_bench).count();
+        const auto now_p = std::chrono::steady_clock::now();
+        if (std::chrono::duration<double>(now_p - last_print).count() >= 0.5) {
+            last_print = now_p;
+            const double dt = std::chrono::duration<double>(now_p - start).count();
             int total_cmds = 0;
             for (const auto& kv : stats) total_cmds += kv.second.cmd_sent;
-            double cmd_hz = (total_elapsed > 0.0) ? (total_cmds / total_elapsed) : 0.0;
-            double per_robot_hz = (num_robots > 0) ? (cmd_hz / num_robots) : 0.0;
-
-            std::cout << "\r" << C_CYAN << "[" << std::fixed << std::setprecision(1)
-                      << total_elapsed << "s] Cmds: " << std::setw(6) << cmd_hz << " Hz ("
-                      << std::setw(5) << per_robot_hz << " Hz/robô)" << C_RESET << " | ";
+            std::cout << "\r[" << std::fixed << std::setprecision(1) << dt << "s] Cmds: "
+                      << std::setw(6) << (total_cmds / std::max(dt, 0.001)) << " Hz ("
+                      << std::setw(5)
+                      << (total_cmds / std::max(dt, 0.001) / robot_ids.size()) << " Hz/robô) |";
             for (uint8_t rid : robot_ids) {
                 const auto& st = stats[rid];
-                if (st.unreachable) {
-                    std::cout << "R" << static_cast<int>(rid) << ":" << C_RED << "OFFLINE(1Hz) "
-                              << C_RESET;
-                } else {
-                    double loss_pct =
-                        (st.tel_req_sent > 0) ? (100.0 * st.tel_lost / st.tel_req_sent) : 0.0;
-                    const std::string& c =
-                        (loss_pct < 15.0) ? C_GREEN : ((loss_pct < 50.0) ? C_YELLOW : C_RED);
-                    std::cout << "R" << static_cast<int>(rid) << ":" << c << std::setw(4)
-                              << std::setprecision(0) << loss_pct << "% loss" << C_RESET << " ";
-                }
+                const double ack_pct =
+                    st.cmd_sent > 0 ? (100.0 * st.cmd_ack_ok / st.cmd_sent) : 0.0;
+                std::cout << " R" << static_cast<int>(rid) << ":" << std::setprecision(0) << ack_pct
+                          << "%ACK";
             }
-            std::cout << std::flush;
-            last_print = after_cycle;
+            std::cout << "   " << std::flush;
         }
     }
 
-    double total_time =
-        std::chrono::duration<double>(std::chrono::steady_clock::now() - start_bench).count();
-    int total_cmd_sent = 0;
-    int total_tel_req = 0;
-    int total_tel_rx = 0;
-    for (const auto& kv : stats) {
-        total_cmd_sent += kv.second.cmd_sent;
-        total_tel_req += kv.second.tel_req_sent;
-        total_tel_rx += kv.second.tel_received;
-    }
-
-    double avg_cmd_freq = (total_time > 0.0) ? (total_cmd_sent / total_time) : 0.0;
-    double freq_per_robot = (num_robots > 0) ? (avg_cmd_freq / num_robots) : 0.0;
+    const double total_s = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+    int total_cmds = 0;
+    for (const auto& kv : stats) total_cmds += kv.second.cmd_sent;
 
     std::cout << "\n\n"
-              << C_BOLD << std::string(86, '=') << "\n"
-              << " RELATÓRIO FINAL DE BENCHMARK (" << std::fixed << std::setprecision(2)
-              << total_time << " segundos)\n"
-              << std::string(86, '=') << C_RESET << "\n"
-              << "  Ciclos completos (Round-Robin) : " << cycle_count << "\n"
-              << "  Total de Comandos Enviados     : " << total_cmd_sent << "\n"
-              << "  Total de Telemetrias (RX/Req)  : " << total_tel_rx << " / " << total_tel_req
-              << "\n"
-              << "  Frequência Total de Comandos   : " << C_BOLD << avg_cmd_freq << " Hz" << C_RESET
-              << " (pacotes/s)\n"
-              << "  Frequência Efetiva por Robô    : " << C_BOLD << freq_per_robot << " Hz"
-              << C_RESET << "\n"
-              << std::string(86, '-') << "\n"
-              << "  Robô |   Cmds | Tel Req | Tel RX | Perda Tel | RTT Médio | RTT Min/Max   | Bateria\n"
-              << std::string(86, '-') << "\n";
+              << C_BOLD << std::string(96, '=') << "\n"
+              << " RELATÓRIO FINAL (" << std::fixed << std::setprecision(2) << total_s
+              << "s | Ciclos: " << cycles << " | Total: " << (total_cmds / std::max(total_s, 0.001))
+              << " Hz)\n"
+              << std::string(96, '=') << C_RESET << "\n"
+              << " Robô |  Cmds | TX ACK% | Retries | TX Avg  | Tel RX/Req | RTT Médio | Bateria\n"
+              << std::string(96, '-') << "\n";
 
     for (uint8_t rid : robot_ids) {
         const auto& st = stats[rid];
-        double loss_pct = (st.tel_req_sent > 0) ? (100.0 * st.tel_lost / st.tel_req_sent) : 0.0;
-        const std::string& color =
-            (st.tel_req_sent == 0)
-                ? C_YELLOW
-                : ((loss_pct <= 10.0) ? C_GREEN : ((loss_pct <= 35.0) ? C_YELLOW : C_RED));
-
-        std::string rtt_avg_str = "   N/A  ";
-        std::string rtt_minmax_str = "     N/A     ";
-        std::string batt_str = (!st.ever_online) ? "OFFLINE" : "N/A";
-
+        const double ack_pct = st.cmd_sent > 0 ? (100.0 * st.cmd_ack_ok / st.cmd_sent) : 0.0;
+        const double avg_ret =
+            st.cmd_ack_ok > 0 ? (static_cast<double>(st.cmd_retries_sum) / st.cmd_ack_ok) : 0.0;
+        const double avg_tx_us = st.cmd_ack_ok > 0 ? (st.tx_us_sum / st.cmd_ack_ok) : 0.0;
+        double avg_rtt = 0.0;
         if (!st.rtts_ms.empty()) {
-            double sum = 0.0;
-            double rmin = st.rtts_ms[0], rmax = st.rtts_ms[0];
-            for (double v : st.rtts_ms) {
-                sum += v;
-                rmin = std::min(rmin, v);
-                rmax = std::max(rmax, v);
-            }
-            std::ostringstream oss_avg, oss_mm, oss_b;
-            oss_avg << std::fixed << std::setprecision(2) << std::setw(6)
-                    << (sum / st.rtts_ms.size()) << "ms";
-            oss_mm << std::fixed << std::setprecision(1) << std::setw(4) << rmin << "/"
-                   << std::setw(4) << rmax << "ms";
-            oss_b << st.last_batt << "% (" << std::fixed << std::setprecision(1) << st.last_kicker_v
-                  << "V)";
-            rtt_avg_str = oss_avg.str();
-            rtt_minmax_str = oss_mm.str();
-            batt_str = oss_b.str();
+            for (double v : st.rtts_ms) avg_rtt += v;
+            avg_rtt /= st.rtts_ms.size();
         }
-
-        std::cout << "   " << std::setw(2) << static_cast<int>(rid) << "  | " << std::setw(6)
-                  << st.cmd_sent << " | " << std::setw(7) << st.tel_req_sent << " | "
-                  << std::setw(6) << st.tel_received << " | " << color << std::setw(8) << std::fixed
-                  << std::setprecision(1) << loss_pct << "%" << C_RESET << " | " << rtt_avg_str
-                  << "  | " << rtt_minmax_str << " | " << batt_str << "\n";
+        std::cout << "  " << std::setw(3) << static_cast<int>(rid) << " | " << std::setw(5)
+                  << st.cmd_sent << " | " << std::setw(6) << std::setprecision(1) << ack_pct
+                  << "% | " << std::setw(7) << std::setprecision(2) << avg_ret << " | "
+                  << std::setw(5) << std::setprecision(0) << avg_tx_us << "us | " << std::setw(4)
+                  << st.tel_received << "/" << std::setw(4) << st.tel_req_sent << "  | ";
+        if (!st.rtts_ms.empty()) {
+            std::cout << std::setw(7) << std::setprecision(2) << avg_rtt << "ms | "
+                      << static_cast<int>(st.last_battery) << "% (" << std::setprecision(1)
+                      << st.last_kicker_v << "V)\n";
+        } else {
+            std::cout << "    N/A   | OFFLINE\n";
+        }
     }
-    std::cout << std::string(86, '=') << "\n";
+    std::cout << std::string(96, '=') << "\n" << std::endl;
 }
-
-// 6. INTERFACE DE LINHA DE COMANDO INTERATIVA (CLI)
 
 void print_cli_help()
 {
     std::cout << "\n"
-              << C_BOLD << "=== COMANDOS DO MODO INTERATIVO (CLI) ===" << C_RESET << "\n"
-              << "  {x:<mm>, y:<mm>, vx:<mm/s>, vy:<mm/s>, w:<0.01rad/s>, kick:<0-255>, id:<id>} -> Envia RobotCommand (30B, sem resposta)\n"
-              << "  tel <robot_id>                                         -> Envia RobotTelemetryRequest (5B) e aguarda Telemetria\n"
-              << "  bench [robos|id=1|0,1] [duracao_s] [intervalo_tel]     -> Executa benchmark (ex: bench 1 10 5 ou bench 0,1 10 5)\n"
-              << "  set_id <target_id|broadcast> <new_id>                  -> Altera o ID do robô na NVS\n"
-              << "  calibrate [<robot_id>|broadcast]                       -> Calibração completa (Rodas + IMU + PID)\n"
-              << "  calibrate_mag [<robot_id>|broadcast]                   -> Calibração do magnetômetro\n"
-              << "  reset_nvs [<robot_id>|broadcast]                       -> Reseta o ID do robô para 0\n"
-              << "  factory_reset [<robot_id>|broadcast]                   -> Apaga toda a NVS e reinicia a ESP32\n"
-              << "  at <COMANDO_AT>                                        -> Envia comando AT direto ao dongle (ex: at AT?)\n"
-              << "  info                                                   -> Exibe informações do dongle USB (AT?) formatadas\n"
-              << "  help                                                   -> Mostra esta ajuda\n"
-              << "  q / quit / exit                                        -> Sai do programa\n";
+              << C_BOLD << "=== COMANDOS DO MODO INTERATIVO (ESP32 BASE STATION) ===" << C_RESET
+              << "\n"
+              << "  {x:<mm>, y:<mm>, vx:<mm/s>, vy:<mm/s>, w:<0.01rad/s>, kick:<0-255>, id:<id>}\n"
+              << "  tel <robot_id>                                     -> Solicita telemetria unicast\n"
+              << "  bench [robos|id=0|0,1,2] [duracao_s] [tel_int]     -> Benchmark TX ACK% + Telemetria RTT\n"
+              << "  info                                               -> Exibe estado/contadores da Base Station\n"
+              << "  scan [start_ch end_ch samples]                     -> Varredura RPD de espectro (0..125)\n"
+              << "  channel <0..125> [base_only]                       -> Migra robôs + Base para novo canal (NVS)\n"
+              << "  auto_channel                                       -> Escaneia e migra para o melhor canal\n"
+              << "  set_id <target_id|broadcast> <new_id>              -> Altera ID do robô (e atualiza endereço RF)\n"
+              << "  calibrate [<robot_id>|broadcast]                   -> Calibração de rodas/PID\n"
+              << "  calibrate_mag [<robot_id>|broadcast]               -> Calibração do magnetômetro\n"
+              << "  reset_nvs [<robot_id>|broadcast]                   -> Reseta ID e canal do robô\n"
+              << "  factory_reset [<robot_id>|broadcast]               -> Apaga toda NVS e reinicia robô\n"
+              << "  help / q / quit / exit\n"
+              << std::endl;
 }
 
-void run_interactive_cli(int fd)
+void run_interactive_cli(oxebots_comms::BaseStationClient& client)
 {
-    std::cout << "\n" << C_BOLD << "=== TERMINAL INTERATIVO NRF24 C++ ===" << C_RESET << std::endl;
+    std::cout << C_BOLD << "\n=== TERMINAL INTERATIVO ESP32 BASE STATION ===" << C_RESET << "\n";
     print_cli_help();
 
     std::string line;
-    while (rclcpp::ok()) {
-        std::cout << "\n" << C_BLUE << "Cmd > " << C_RESET << std::flush;
+    while (true) {
+        std::cout << C_BOLD << "Cmd > " << C_RESET << std::flush;
         if (!std::getline(std::cin, line)) break;
 
         size_t first = line.find_first_not_of(" \t\r\n");
         if (first == std::string::npos) continue;
-        size_t last = line.find_last_not_of(" \t\r\n");
-        std::string raw = line.substr(first, last - first + 1);
-
+        std::string raw = line.substr(first, line.find_last_not_of(" \t\r\n") - first + 1);
         if (raw == "q" || raw == "quit" || raw == "exit") break;
-        if (raw == "help") {
+        if (raw == "help" || raw == "?") {
             print_cli_help();
             continue;
         }
-        if (raw == "info") {
-            print_dongle_system_info(fd);
-            continue;
-        }
-        if (raw.rfind("at ", 0) == 0 || raw.rfind("AT", 0) == 0) {
-            std::string at_cmd = (raw.rfind("at ", 0) == 0) ? raw.substr(3) : raw;
-            if (at_cmd == "AT?") {
-                print_dongle_system_info(fd);
-            } else {
-                std::string resp = send_at_and_translate(fd, at_cmd, 600);
-                std::cout << C_GREEN << (resp.empty() ? "Sem resposta." : resp) << C_RESET
-                          << std::endl;
-            }
-            continue;
-        }
 
-        std::istringstream iss(raw);
         std::vector<std::string> parts;
-        std::string tok;
-        while (iss >> tok) parts.push_back(tok);
+        {
+            std::stringstream ss(raw);
+            std::string tok;
+            while (ss >> tok) parts.push_back(tok);
+        }
         if (parts.empty()) continue;
 
         try {
-            if (parts[0] == "set_id") {
-                if (parts.size() < 3) {
-                    std::cout << C_YELLOW << "Uso: set_id <target_id|broadcast> <new_id>" << C_RESET
+            if (parts[0] == "info") {
+                struct BaseInfo info = {};
+                if (client.get_info(&info)) {
+                    print_base_info(info, client.port_name(), client.baud_rate());
+                } else {
+                    std::cout << C_RED << "Sem resposta da Base Station." << C_RESET << std::endl;
+                }
+                continue;
+            }
+            if (parts[0] == "scan") {
+                uint8_t start_ch = (parts.size() > 1) ? static_cast<uint8_t>(std::stoi(parts[1])) : 0;
+                uint8_t end_ch = (parts.size() > 2) ? static_cast<uint8_t>(std::stoi(parts[2])) : 125;
+                uint8_t samples = (parts.size() > 3) ? static_cast<uint8_t>(std::stoi(parts[3])) : 32;
+                std::cout << C_CYAN << "Escaneando canais " << static_cast<int>(start_ch) << ".."
+                          << static_cast<int>(end_ch) << " (" << static_cast<int>(samples)
+                          << " amostras/canal)..." << C_RESET << std::endl;
+                struct BaseScanResult scan = {};
+                if (client.scan_spectrum(start_ch, end_ch, samples, &scan)) {
+                    print_scan_result(scan);
+                } else {
+                    std::cout << C_RED << "Falha/timeout no scan de espectro." << C_RESET
+                              << std::endl;
+                }
+                continue;
+            }
+            if (parts[0] == "channel") {
+                if (parts.size() < 2) {
+                    std::cout << C_YELLOW << "Uso: channel <0..125> [base_only]" << C_RESET
                               << std::endl;
                     continue;
                 }
-                uint8_t target = parse_robot_id_token(parts[1]);
-                uint16_t new_id = static_cast<uint16_t>(std::stoi(parts[2]));
-                send_robot_config_packet(fd, target, CONFIG_FLAG_SET_ID, new_id);
+                const uint8_t ch = static_cast<uint8_t>(std::stoi(parts[1]));
+                const bool notify = !(parts.size() > 2 && parts[2] == "base_only");
+                switch_channel_coordinated(client, ch, notify);
                 continue;
             }
-            if (parts[0] == "calibrate_mag") {
-                uint8_t rid = (parts.size() > 1) ? parse_robot_id_token(parts[1]) : 0;
-                send_robot_config_packet(fd, rid, CONFIG_FLAG_CALIBRATE_MAG, 0);
+            if (parts[0] == "auto_channel") {
+                struct BaseScanResult scan = {};
+                if (client.scan_spectrum(0, 125, 32, &scan) && scan.count > 0) {
+                    print_scan_result(scan);
+                    switch_channel_coordinated(client, scan.best_channel, true);
+                } else {
+                    std::cout << C_RED << "Scan falhou." << C_RESET << std::endl;
+                }
                 continue;
             }
-            if (parts[0] == "calibrate") {
-                uint8_t rid = (parts.size() > 1) ? parse_robot_id_token(parts[1]) : 0;
-                send_robot_config_packet(fd, rid, CONFIG_FLAG_RUN_CALIBRATION, 0);
+            if (parts[0] == "set_id") {
+                if (parts.size() < 3) {
+                    std::cout << C_YELLOW << "Uso: set_id <target_id|broadcast> <new_id>"
+                              << C_RESET << std::endl;
+                    continue;
+                }
+                const uint8_t target = parse_robot_id_token(parts[1]);
+                const uint16_t new_id = static_cast<uint16_t>(std::stoi(parts[2]));
+                struct BaseRfTxStatus st = {};
+                send_robot_config(client, target, CONFIG_FLAG_SET_ID, new_id, &st);
+                std::cout << C_CYAN << "[SET_ID] target=" << static_cast<int>(target)
+                          << " new_id=" << new_id << " status=" << static_cast<int>(st.status)
+                          << C_RESET << std::endl;
                 continue;
             }
-            if (parts[0] == "reset_nvs") {
+            if (parts[0] == "calibrate" || parts[0] == "calibrate_mag" ||
+                parts[0] == "reset_nvs" || parts[0] == "factory_reset") {
                 uint8_t rid = (parts.size() > 1) ? parse_robot_id_token(parts[1]) : 0;
-                send_robot_config_packet(fd, rid, CONFIG_FLAG_RESET_NVS, 0);
-                continue;
-            }
-            if (parts[0] == "factory_reset") {
-                uint8_t rid = (parts.size() > 1) ? parse_robot_id_token(parts[1]) : 0;
-                send_robot_config_packet(fd, rid, CONFIG_FLAG_FACTORY_RESET, 0);
+                uint8_t flag = CONFIG_FLAG_RUN_CALIBRATION;
+                if (parts[0] == "calibrate_mag") flag = CONFIG_FLAG_CALIBRATE_MAG;
+                else if (parts[0] == "reset_nvs") flag = CONFIG_FLAG_RESET_NVS;
+                else if (parts[0] == "factory_reset") flag = CONFIG_FLAG_FACTORY_RESET;
+                struct BaseRfTxStatus st = {};
+                send_robot_config(client, rid, flag, 0, &st);
+                std::cout << C_CYAN << "[CONFIG] robot=" << static_cast<int>(rid) << " flag=0x"
+                          << std::hex << static_cast<int>(flag) << std::dec
+                          << " status=" << static_cast<int>(st.status) << C_RESET << std::endl;
                 continue;
             }
             if (parts[0] == "tel") {
                 uint8_t rid = (parts.size() > 1) ? parse_robot_id_token(parts[1]) : 0;
                 struct RobotTelemetry tel = {};
                 double rtt_ms = 0.0;
-                std::cout << C_CYAN << "→ [TEL_REQ] robot=" << static_cast<int>(rid) << C_RESET
-                          << std::flush;
+                struct BaseRfTxStatus tx_st = {};
                 if (send_telemetry_request_and_wait(
-                        fd, rid, &tel, &rtt_ms, CLI_TELEMETRY_TIMEOUT_MS)) {
-                    std::cout << "\r" << C_GREEN << "✓ [RX] Robô "
-                              << static_cast<int>(tel.header.robot_id) << " | RTT=" << std::fixed
-                              << std::setprecision(2) << rtt_ms
-                              << "ms | Batt=" << static_cast<int>(tel.battery_percentage)
-                              << "% | Kicker=" << (tel.kicker_voltage / 100.0) << "V" << C_RESET
-                              << "          \n";
+                        client, rid, &tel, &rtt_ms, &tx_st, CLI_TELEMETRY_TIMEOUT_MS)) {
+                    std::cout << C_GREEN << "✓ [TEL] Robô " << static_cast<int>(tel.header.robot_id)
+                              << " | RTT=" << std::fixed << std::setprecision(2) << rtt_ms
+                              << "ms (retries=" << static_cast<int>(tx_st.retries)
+                              << ") | Batt=" << static_cast<int>(tel.battery_percentage)
+                              << "% | Kicker=" << (tel.kicker_voltage / 100.0)
+                              << "V | Err=0x" << std::hex << tel.error_flags << std::dec
+                              << C_RESET << std::endl;
                 } else {
-                    std::cout << "\n"
-                              << C_RED << "✗ [TIMEOUT] Sem resposta de telemetria do Robô "
-                              << static_cast<int>(rid) << C_RESET << std::endl;
+                    std::cout << C_RED << "✗ [TIMEOUT] Sem resposta do Robô "
+                              << static_cast<int>(rid)
+                              << " (tx_status=" << static_cast<int>(tx_st.status) << ")" << C_RESET
+                              << std::endl;
                 }
                 continue;
             }
             if (parts[0] == "bench" || parts[0] == "benchmark") {
-                std::string target_spec = (parts.size() > 1) ? parts[1] : "3";
-                double dur_s = (parts.size() > 2) ? std::stod(parts[2]) : 10.0;
+                std::string spec = (parts.size() > 1) ? parts[1] : "3";
+                double dur = (parts.size() > 2) ? std::stod(parts[2]) : 10.0;
                 int tel_int = (parts.size() > 3) ? std::stoi(parts[3]) : 5;
-                run_benchmark(fd, target_spec, dur_s, tel_int, get_active_guard_us());
+                run_benchmark(client, spec, dur, tel_int);
                 continue;
             }
 
-            // Comando de movimento: {x:0, y:0, vx:500, vy:0, w:0, kick:0, id:1}
+            // Motion command: {vx:300, id:0}
+            if (raw.find(':') == std::string::npos) {
+                std::cout << C_YELLOW << "Comando desconhecido: '" << raw
+                          << "' (digite 'help' para ver os comandos)." << C_RESET << std::endl;
+                continue;
+            }
             int16_t x = 0, y = 0, angle = 0, vx = 0, vy = 0, w = 0;
             uint8_t kick = 0, robot_id = 0;
-
             std::string clean = raw;
-            clean.erase(std::remove(clean.begin(), clean.end(), '{'), clean.end());
-            clean.erase(std::remove(clean.begin(), clean.end(), '}'), clean.end());
-            clean.erase(std::remove(clean.begin(), clean.end(), '['), clean.end());
-            clean.erase(std::remove(clean.begin(), clean.end(), ']'), clean.end());
-
+            for (char ch : std::string("{}[]")) {
+                clean.erase(std::remove(clean.begin(), clean.end(), ch), clean.end());
+            }
             std::stringstream ss(clean);
             std::string pair_str;
             while (std::getline(ss, pair_str, ',')) {
@@ -996,7 +710,6 @@ void run_interactive_cli(int fd)
                 if (colon == std::string::npos) continue;
                 std::string k = pair_str.substr(0, colon);
                 std::string v = pair_str.substr(colon + 1);
-
                 auto trim = [](std::string& s) {
                     const char* ws = " \t\r\n\"'";
                     size_t b = s.find_first_not_of(ws);
@@ -1004,8 +717,7 @@ void run_interactive_cli(int fd)
                         s.clear();
                         return;
                     }
-                    size_t e = s.find_last_not_of(ws);
-                    s = s.substr(b, e - b + 1);
+                    s = s.substr(b, s.find_last_not_of(ws) - b + 1);
                 };
                 trim(k);
                 trim(v);
@@ -1022,113 +734,102 @@ void run_interactive_cli(int fd)
                 else if (k == "id") robot_id = parse_robot_id_token(v);
             }
 
-            struct RobotCommand cmd_bp = {};
-            cmd_bp.header.msg_type = MSG_TYPE_COMMAND;
-            cmd_bp.header.robot_id = robot_id;
-            cmd_bp.header.timestamp = now_ms_u32();
-            cmd_bp.target_pose.x = x;
-            cmd_bp.target_pose.y = y;
-            cmd_bp.target_pose.angle = angle;
-            cmd_bp.target_pose.x_v = vx;
-            cmd_bp.target_pose.y_v = vy;
-            cmd_bp.target_pose.angular_vel = w;
-            cmd_bp.kick_velocity = kick;
+            struct RobotCommand cmd = {};
+            cmd.header.msg_type = MSG_TYPE_COMMAND;
+            cmd.header.robot_id = robot_id;
+            cmd.header.timestamp = now_ms_u32();
+            cmd.target_pose.x = x;
+            cmd.target_pose.y = y;
+            cmd.target_pose.angle = angle;
+            cmd.target_pose.x_v = vx;
+            cmd.target_pose.y_v = vy;
+            cmd.target_pose.angular_vel = w;
+            cmd.kick_velocity = kick;
 
-            // Envia apenas RobotCommand (30B, fire-and-forget — não pede telemetria)
-            send_robot_command_packet(fd, cmd_bp, get_active_guard_us());
-
-            std::string id_label =
-                (robot_id == ROBOT_ID_BROADCAST) ? "BROADCAST" : std::to_string(robot_id);
-            std::cout << C_CYAN << "→ [CMD ENVIADO] robot=" << id_label
-                      << " ts=" << cmd_bp.header.timestamp << " x=" << x << " y=" << y
-                      << " vx=" << vx << " vy=" << vy << " w=" << w
-                      << " kick=" << static_cast<int>(kick) << C_RESET << std::endl;
+            struct BaseRfTxStatus st = {};
+            const bool ok = send_robot_command(client, cmd, &st);
+            std::cout << (ok && (st.status == BS_TX_STATUS_OK || st.status == BS_TX_STATUS_NO_ACK_SENT)
+                              ? C_GREEN
+                              : C_YELLOW)
+                      << "→ [CMD] robot=" << static_cast<int>(robot_id) << " vx=" << vx
+                      << " vy=" << vy << " w=" << w << " kick=" << static_cast<int>(kick)
+                      << " | status=" << static_cast<int>(st.status)
+                      << " retries=" << static_cast<int>(st.retries)
+                      << " tx=" << st.tx_time_us << "us" << C_RESET << std::endl;
         } catch (const std::exception& e) {
-            std::cout << C_RED << "Erro ao interpretar comando: " << e.what() << C_RESET
-                      << std::endl;
+            std::cout << C_RED << "Erro: " << e.what() << C_RESET << std::endl;
         }
     }
 }
 
 }  // namespace
 
-// 7. IMPLEMENTAÇÃO DA CLASSE ROS 2 Nrf24HardwareBridge
-
-std::string Find_Nrf24_port(uint16_t port_pid, uint16_t port_vid)
+Nrf24HardwareBridge::Nrf24HardwareBridge(bool enable_ros_loop)
+    : Node("nrf24_hardware_bridge")
 {
-    struct sp_port** port_list;
-    enum sp_return result = sp_list_ports(&port_list);
-
-    if (result != SP_OK) {
-        std::cerr << "Error - Could not list the serial ports" << std::endl;
-        return "";
-    }
-
-    std::string port_name_found = "";
-    for (int i = 0; port_list[i] != NULL; i++) {
-        struct sp_port* port = port_list[i];
-        int vid, pid;
-        if (sp_get_port_usb_vid_pid(port, &vid, &pid) == SP_OK) {
-            if (vid == port_vid && pid == port_pid) {
-                port_name_found = sp_get_port_name(port);
-                break;
-            }
-        }
-    }
-
-    sp_free_port_list(port_list);
-    return port_name_found;
-}
-
-Nrf24HardwareBridge::Nrf24HardwareBridge(bool enable_ros_loop) : Node("nrf24_hardware_bridge")
-{
-    // Declaração de parâmetros ROS 2 (carregados via match_config.yaml)
-    this->declare_parameter("radio_rx_address", "ADMIN");
-    this->declare_parameter("radio_tx_address", "ESP32");
-    this->declare_parameter("radio_frequency", 2.476);
-    this->declare_parameter("radio_rate", 3);
+    this->declare_parameter("serial_port", std::string("auto"));
+    this->declare_parameter("serial_baud", 921600);
+    this->declare_parameter("radio_channel", 76);
+    this->declare_parameter("radio_rate", static_cast<int>(BS_RATE_2MBPS));
+    this->declare_parameter("radio_pa_level", 3);
+    this->declare_parameter("radio_retransmit_delay", 1);
+    this->declare_parameter("radio_retransmit_count", 3);
+    this->declare_parameter("auto_select_channel", false);
     this->declare_parameter("command_mode", std::string("velocity"));
     this->declare_parameter("telemetry_request_interval", 5);
-    
-    std::string command_mode = this->get_parameter("command_mode").as_string();
-    use_team_vel_cmd_ = (command_mode != "point");
+    this->declare_parameter("max_kick_speed", oxebots_comms::kDefaultMaxKickSpeedMps);
+
+    const std::string port_spec = g_override_port.empty()
+                                      ? this->get_parameter("serial_port").as_string()
+                                      : g_override_port;
+    const int baud =
+        (g_override_baud > 0) ? g_override_baud : this->get_parameter("serial_baud").as_int();
+    const std::string command_mode = this->get_parameter("command_mode").as_string();
     telemetry_request_interval_ = this->get_parameter("telemetry_request_interval").as_int();
+    max_kick_speed_ = oxebots_comms::sanitize_max_kick_speed(
+        this->get_parameter("max_kick_speed").as_double());
 
-    // Busca automática da porta USB do adaptador CH340 (VID 1a86, PID 7523)
-    const uint16_t port_vid = 0x1A86, port_pid = 0x7523;
-    std::string port_name = Find_Nrf24_port(port_pid, port_vid);
-    if (port_name.empty()) {
-        RCLCPP_ERROR(this->get_logger(), "Dispositivo nRF24L01 não encontrado nas portas USB.");
-        throw std::runtime_error("Hardware do nRF24 ausente");
+    base_client_.set_log_callback([this](uint8_t level, const std::string& text) {
+        if (level <= 1) {
+            RCLCPP_ERROR(this->get_logger(), "[BASE] %s", text.c_str());
+        } else if (level == 2) {
+            RCLCPP_WARN(this->get_logger(), "[BASE] %s", text.c_str());
+        } else {
+            RCLCPP_DEBUG(this->get_logger(), "[BASE] %s", text.c_str());
+        }
+    });
+
+    if (!base_client_.connect(port_spec, baud)) {
+        RCLCPP_ERROR(
+            this->get_logger(),
+            "ESP32 Base Station não encontrada (port='%s', baud=%d): %s",
+            port_spec.c_str(),
+            baud,
+            base_client_.last_error().c_str());
+        throw std::runtime_error("ESP32 Base Station ausente (" + base_client_.last_error() + ")");
     }
 
-    RCLCPP_INFO(this->get_logger(), "Dispositivo encontrado na porta: %s", port_name.c_str());
+    RCLCPP_INFO(
+        this->get_logger(),
+        "%sESP32 Base Station conectada em %s @ %d baud.%s",
+        C_GREEN.c_str(),
+        base_client_.port_name().c_str(),
+        base_client_.baud_rate(),
+        C_RESET.c_str());
 
-    if (!open_serial_port(port_name)) {
-        RCLCPP_ERROR(this->get_logger(), "Erro ao abrir porta serial: %s", port_name.c_str());
-        throw std::runtime_error("Falha na porta serial");
-    }
-
-    g_active_serial_fd = serial_fd_;
-
-    if (!g_skip_at_config) {
-        configure_nrf24();
-    } else {
-        RCLCPP_INFO(this->get_logger(), "Pulando configuração AT inicial (--skip-config).");
-        tcflush(serial_fd_, TCIOFLUSH);
+    if (!g_skip_config) {
+        configure_base_station();
     }
 
     if (enable_ros_loop) {
         telemetry_pub_ =
             this->create_publisher<oxebots_interfaces::msg::RobotTelemetry>("/robot_telemetry", 10);
 
-        // Assina game_data para obter a orientação atual dos robôs (conversão Global -> Local)
         game_data_sub_ = this->create_subscription<oxebots_interfaces::msg::GameData>(
             "game_data",
             rclcpp::SensorDataQoS(),
             std::bind(&Nrf24HardwareBridge::game_data_callback, this, std::placeholders::_1));
 
-        // Assina requisições de calibração de firmware (envia CONFIG_FLAG_RUN_CALIBRATION ao robô)
         calibrate_robot_sub_ = this->create_subscription<std_msgs::msg::UInt8>(
             "/nrf24/calibrate_robot",
             10,
@@ -1150,14 +851,13 @@ Nrf24HardwareBridge::Nrf24HardwareBridge(bool enable_ros_loop) : Node("nrf24_har
                 std::bind(&Nrf24HardwareBridge::send_command, this, std::placeholders::_1));
         }
 
-        // Timer dedicado para desacoplar a escrita serial dos callbacks de subscrição ROS
         tx_timer_ = this->create_wall_timer(
             std::chrono::milliseconds(TX_TIMER_PERIOD_MS),
             std::bind(&Nrf24HardwareBridge::tx_timer_callback, this));
 
         RCLCPP_INFO(
             this->get_logger(),
-            "%sPonte ROS 2 -> NRF24L01 pronta! Modo: '%s' | Telemetria a cada %d cmds | Sincronismo: ACK 6B do Dongle%s",
+            "%sPonte ROS 2 -> ESP32 Base Station pronta! Modo: '%s' | Telemetria a cada %d cmds%s",
             C_GREEN.c_str(),
             command_mode.c_str(),
             telemetry_request_interval_,
@@ -1167,9 +867,58 @@ Nrf24HardwareBridge::Nrf24HardwareBridge(bool enable_ros_loop) : Node("nrf24_har
 
 Nrf24HardwareBridge::~Nrf24HardwareBridge()
 {
-    if (serial_fd_ >= 0) {
-        close(serial_fd_);
-        RCLCPP_INFO(this->get_logger(), "Porta serial fechada com segurança.");
+    base_client_.disconnect();
+}
+
+void Nrf24HardwareBridge::configure_base_station()
+{
+    const int ch = (g_override_channel >= 0)
+                       ? g_override_channel
+                       : this->get_parameter("radio_channel").as_int();
+    const int rate =
+        (g_override_rate >= 0) ? g_override_rate : this->get_parameter("radio_rate").as_int();
+    const int pa =
+        (g_override_pa >= 0) ? g_override_pa : this->get_parameter("radio_pa_level").as_int();
+    const int ard = this->get_parameter("radio_retransmit_delay").as_int();
+    const int arc = this->get_parameter("radio_retransmit_count").as_int();
+    const bool auto_select = this->get_parameter("auto_select_channel").as_bool();
+
+    struct BaseRadioConfig cfg = {};
+    cfg.channel = static_cast<uint8_t>(std::clamp(ch, 0, 125));
+    cfg.data_rate = static_cast<uint8_t>(std::clamp(rate, 0, 2));
+    cfg.pa_level = static_cast<uint8_t>(std::clamp(pa, 0, 3));
+    cfg.retransmit_delay = static_cast<uint8_t>(std::clamp(ard, 0, 15));
+    cfg.retransmit_count = static_cast<uint8_t>(std::clamp(arc, 0, 15));
+    cfg.persist_nvs = 0;
+    std::memcpy(cfg.addr_suffix, DEFAULT_ADDR_SUFFIX.data(), 4);
+    cfg.base_addr_lsb = DEFAULT_BASE_ADDR_LSB;
+
+    struct BaseInfo info = {};
+    if (base_client_.set_config(cfg, &info)) {
+        RCLCPP_INFO(
+            this->get_logger(),
+            "Base Station configurada (ch=%u, %s, %s, ARD=%u, ARC=%u, radio_ready=%u).",
+            info.channel,
+            rate_to_str(info.data_rate),
+            pa_to_str(info.pa_level),
+            info.retransmit_delay,
+            info.retransmit_count,
+            info.radio_ready);
+    } else {
+        RCLCPP_WARN(this->get_logger(), "Falha ao aplicar configuração inicial na Base Station.");
+    }
+
+    if (auto_select) {
+        struct BaseScanResult scan = {};
+        if (base_client_.scan_spectrum(0, 125, 24, &scan) && scan.count > 0 &&
+            scan.best_channel != info.channel) {
+            RCLCPP_INFO(
+                this->get_logger(),
+                "Auto-canal selecionou canal %u (%u MHz); migrando robôs + Base...",
+                scan.best_channel,
+                2400U + scan.best_channel);
+            switch_channel_coordinated(base_client_, scan.best_channel, true);
+        }
     }
 }
 
@@ -1189,62 +938,48 @@ void Nrf24HardwareBridge::calibrate_robot_callback(const std_msgs::msg::UInt8::S
     pending_calibrations_.push_back(msg->data);
     RCLCPP_INFO(
         this->get_logger(),
-        "[CALIB] Requisição de calibração de firmware enfileirada para o robô %u.",
+        "[CALIB] Requisição de calibração enfileirada para robô %u.",
         static_cast<unsigned>(msg->data));
 }
 
 struct Pose Nrf24HardwareBridge::kinematic_pose_to_bitproto(
     const oxebots_interfaces::msg::RobotKinematicPose& pose)
 {
-    struct Pose pose_bitproto = {};
-    pose_bitproto.x = clamp_i16(pose.x);
-    pose_bitproto.y = clamp_i16(pose.y);
-    pose_bitproto.angle = clamp_i16(safe_finite(pose.angle) * (180.0 / M_PI) * 100.0);
-    pose_bitproto.x_v = clamp_i16(pose.x_v);
-    pose_bitproto.y_v = clamp_i16(pose.y_v);
-    pose_bitproto.angular_vel = clamp_i16(safe_finite(pose.angular_vel) * 100.0);
-    return pose_bitproto;
+    struct Pose p = {};
+    p.x = clamp_i16(pose.x);
+    p.y = clamp_i16(pose.y);
+    p.angle = clamp_i16(safe_finite(pose.angle) * (180.0 / M_PI) * 100.0);
+    p.x_v = clamp_i16(pose.x_v);
+    p.y_v = clamp_i16(pose.y_v);
+    p.angular_vel = clamp_i16(safe_finite(pose.angular_vel) * 100.0);
+    return p;
 }
 
 void Nrf24HardwareBridge::send_command(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg)
 {
     const auto now = std::chrono::steady_clock::now();
-
     for (const auto& robot_ros : msg->robots) {
-        if (!std::isfinite(robot_ros.x_velocity) || !std::isfinite(robot_ros.y_velocity) ||
-            !std::isfinite(robot_ros.angular_velocity) || !std::isfinite(robot_ros.kick_speed)) {
-            RCLCPP_ERROR_THROTTLE(
-                this->get_logger(),
-                *this->get_clock(),
-                1000,
-                "Robô %u: comando não-finito (vx=%.2f vy=%.2f w=%.2f kick=%.2f), zerando campos inválidos.",
-                robot_ros.id,
-                robot_ros.x_velocity,
-                robot_ros.y_velocity,
-                robot_ros.angular_velocity,
-                robot_ros.kick_speed);
-        }
-
         const double vx_global = safe_finite(robot_ros.x_velocity);
         const double vy_global = safe_finite(robot_ros.y_velocity);
         const double w = safe_finite(robot_ros.angular_velocity);
         const double kick = safe_finite(robot_ros.kick_speed);
 
-        // Rotaciona velocidade do referencial Global (visão) para o referencial Local do robô
         const double theta = robot_orientations_[robot_ros.id];
         const double v_forward = vx_global * std::cos(theta) + vy_global * std::sin(theta);
         const double v_left = -vx_global * std::sin(theta) + vy_global * std::cos(theta);
 
-        struct SingleRobotVelCmd vel = {};
-        vel.robot_id      = robot_ros.id & 0x0F;
-        vel.vx            = clamp_i12(v_forward * 1000.0); // int12: [-2048, +2047]
-        vel.vy            = clamp_i12(v_left * 1000.0);    // int12: [-2048, +2047]
-        vel.vw            = -clamp_i11(w * 100.0);         // int11: [-1024, +1023]
-        vel.kick_velocity = clamp_u7(kick);                // uint7: [0, 127]
-        vel.flags         = 0;
+        struct RobotCommand cmd = {};
+        cmd.header.msg_type = MSG_TYPE_COMMAND;
+        cmd.header.robot_id = robot_ros.id;
+        cmd.header.timestamp =
+            static_cast<uint32_t>((this->now().nanoseconds() / 1000000ULL) & 0xFFFFFFFFULL);
+        cmd.target_pose.x_v = clamp_i16(v_forward * 1000.0);
+        cmd.target_pose.y_v = clamp_i16(v_left * 1000.0);
+        cmd.target_pose.angular_vel = -clamp_i16(w * 100.0);
+        cmd.kick_velocity = oxebots_comms::kick_speed_to_u8(kick, max_kick_speed_);
 
         auto& slot = pending_commands_[robot_ros.id];
-        slot.vel_cmd = vel;
+        slot.cmd = cmd;
         slot.updated_at = now;
         slot.pending = true;
     }
@@ -1254,20 +989,18 @@ void Nrf24HardwareBridge::send_trajectory_setpoint(
     const oxebots_interfaces::msg::RobotTrajectorySetpoint::SharedPtr msg)
 {
     const auto now = std::chrono::steady_clock::now();
-
     for (const auto& robot_ros : msg->robots) {
-        struct RobotCommand cmd_bitproto = {};
-        cmd_bitproto.header.msg_type = MSG_TYPE_COMMAND;
-        cmd_bitproto.header.robot_id = robot_ros.id;
-        cmd_bitproto.header.timestamp =
+        struct RobotCommand cmd = {};
+        cmd.header.msg_type = MSG_TYPE_COMMAND;
+        cmd.header.robot_id = robot_ros.id;
+        cmd.header.timestamp =
             static_cast<uint32_t>((this->now().nanoseconds() / 1000000ULL) & 0xFFFFFFFFULL);
-
-        cmd_bitproto.target_pose = kinematic_pose_to_bitproto(robot_ros.target);
-        cmd_bitproto.vision_pose = kinematic_pose_to_bitproto(robot_ros.vision);
-        cmd_bitproto.kick_velocity = clamp_u8(robot_ros.kick_speed);
+        cmd.target_pose = kinematic_pose_to_bitproto(robot_ros.target);
+        cmd.vision_pose = kinematic_pose_to_bitproto(robot_ros.vision);
+        cmd.kick_velocity = oxebots_comms::kick_speed_to_u8(robot_ros.kick_speed, max_kick_speed_);
 
         auto& slot = pending_commands_[robot_ros.id];
-        slot.cmd = cmd_bitproto;
+        slot.cmd = cmd;
         slot.updated_at = now;
         slot.pending = true;
     }
@@ -1275,23 +1008,19 @@ void Nrf24HardwareBridge::send_trajectory_setpoint(
 
 void Nrf24HardwareBridge::tx_timer_callback()
 {
-    if (serial_fd_ < 0) return;
+    if (!base_client_.is_connected()) return;
 
-    // 0. Transmite pedidos pendentes de calibração de firmware (CONFIG_FLAG_RUN_CALIBRATION)
     if (!pending_calibrations_.empty()) {
-        auto calib_ids = std::move(pending_calibrations_);
+        auto ids = std::move(pending_calibrations_);
         pending_calibrations_.clear();
-        for (uint8_t robot_id : calib_ids) {
-            if (send_robot_config_packet(serial_fd_, robot_id, CONFIG_FLAG_RUN_CALIBRATION, 0)) {
+        for (uint8_t rid : ids) {
+            struct BaseRfTxStatus st = {};
+            if (send_robot_config(base_client_, rid, CONFIG_FLAG_RUN_CALIBRATION, 0, &st)) {
                 RCLCPP_INFO(
                     this->get_logger(),
-                    "[CALIB] Pacote CONFIG_FLAG_RUN_CALIBRATION enviado ao robô %u.",
-                    static_cast<unsigned>(robot_id));
-            } else {
-                RCLCPP_WARN(
-                    this->get_logger(),
-                    "[CALIB] Falha ao enviar CONFIG_FLAG_RUN_CALIBRATION ao robô %u.",
-                    static_cast<unsigned>(robot_id));
+                    "[CALIB] CONFIG_FLAG_RUN_CALIBRATION enviado ao robô %u (status=%u).",
+                    rid,
+                    st.status);
             }
         }
     }
@@ -1301,79 +1030,50 @@ void Nrf24HardwareBridge::tx_timer_callback()
     const auto now = std::chrono::steady_clock::now();
     std::vector<uint8_t> sent_ids;
 
-    // 1. Transmite os comandos pendentes
-    if (use_team_vel_cmd_) {
-        std::vector<struct SingleRobotVelCmd> batch;
-        for (auto& [robot_id, entry] : pending_commands_) {
-            if (!entry.pending) continue;
-            entry.pending = false;
-            batch.push_back(entry.vel_cmd);
-        }
+    for (auto& [robot_id, entry] : pending_commands_) {
+        if (!entry.pending) continue;
+        entry.pending = false;
 
-        constexpr size_t MAX_PER_PACKET = 3;
-        for (size_t i = 0; i < batch.size(); i += MAX_PER_PACKET) {
-            const size_t end = std::min(i + MAX_PER_PACKET, batch.size());
-            std::vector<struct SingleRobotVelCmd> chunk(batch.begin() + i, batch.begin() + end);
-            if (send_team_vel_cmd_packet(serial_fd_, chunk, get_active_guard_us())) {
-                for (const auto& c : chunk) {
-                    sent_ids.push_back(c.robot_id);
-                }
-            }
-        }
-    } else {
-        for (auto& [robot_id, entry] : pending_commands_) {
-            if (!entry.pending) continue;
-            entry.pending = false;
+        entry.cmd.header.timestamp =
+            static_cast<uint32_t>((this->now().nanoseconds() / 1000000ULL) & 0xFFFFFFFFULL);
 
-            // Atualiza o timestamp exatamente no instante do envio pelo rádio
-            entry.cmd.header.timestamp =
-                static_cast<uint32_t>((this->now().nanoseconds() / 1000000ULL) & 0xFFFFFFFFULL);
-
-            // Transmite o RobotCommand (30B, sincronizado pelo ACK 6B do dongle USB)
-            if (transmit_command(entry.cmd)) {
-                sent_ids.push_back(robot_id);
+        struct BaseRfTxStatus tx_st = {};
+        if (transmit_command(entry.cmd, &tx_st)) {
+            sent_ids.push_back(robot_id);
+            auto& link = link_states_[robot_id];
+            if (tx_st.status == BS_TX_STATUS_OK || tx_st.status == BS_TX_STATUS_NO_ACK_SENT) {
+                link.consecutive_tx_fails = 0;
+            } else {
+                link.consecutive_tx_fails++;
             }
         }
     }
 
-    // 2. Verifica se está na hora de solicitar telemetria para os robôs enviados
-    if (telemetry_request_interval_ <= 0) {
-        return;
-    }
+    if (telemetry_request_interval_ <= 0) return;
 
     for (uint8_t robot_id : sent_ids) {
-        if (robot_id == ROBOT_ID_BROADCAST) {
-            continue;
-        }
+        if (robot_id == ROBOT_ID_BROADCAST) continue;
 
-        auto [it, inserted] = telemetry_states_.try_emplace(robot_id);
-        auto& tel_state = it->second;
+        auto [it, inserted] = link_states_.try_emplace(robot_id);
+        auto& st = it->second;
         if (inserted) {
-            // Escalona o contador inicial pelo ID do robô para que dois robôs não peçam
-            // telemetria no mesmo ciclo de timer
-            tel_state.cmd_since_last_tel = robot_id % telemetry_request_interval_;
+            st.cmd_since_last_tel = robot_id % telemetry_request_interval_;
         }
 
-        tel_state.cmd_since_last_tel++;
-        if (tel_state.cmd_since_last_tel < telemetry_request_interval_) {
-            continue;
-        }
-        tel_state.cmd_since_last_tel = 0;
+        st.cmd_since_last_tel++;
+        if (st.cmd_since_last_tel < telemetry_request_interval_) continue;
+        st.cmd_since_last_tel = 0;
 
-        // Se o robô não respondeu às últimas requisições de telemetria, sonda apenas a 1 Hz
-        // para não desperdiçar 35ms de janela de rádio a cada N comandos
-        if (!tel_state.is_online) {
-            auto ms_since_last_tel = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                         now - tel_state.last_tel_attempt)
-                                         .count();
-            if (ms_since_last_tel < OFFLINE_PROBE_INTERVAL_MS) {
-                continue;
-            }
+        if (!st.is_online) {
+            const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                now - st.last_tel_attempt)
+                                .count();
+            if (ms < OFFLINE_PROBE_INTERVAL_MS) continue;
         }
 
-        tel_state.last_tel_attempt = now;
+        st.last_tel_attempt = now;
         if (request_and_receive_telemetry(robot_id)) {
-            if (!tel_state.is_online) {
+            if (!st.is_online) {
                 RCLCPP_INFO(
                     this->get_logger(),
                     "%s[RADIO] Robô %d voltou a responder telemetria!%s",
@@ -1381,15 +1081,15 @@ void Nrf24HardwareBridge::tx_timer_callback()
                     robot_id,
                     C_RESET.c_str());
             }
-            tel_state.is_online = true;
-            tel_state.consecutive_losses = 0;
+            st.is_online = true;
+            st.consecutive_tel_losses = 0;
         } else {
-            tel_state.consecutive_losses++;
-            if (tel_state.consecutive_losses >= 2 && tel_state.is_online) {
-                tel_state.is_online = false;
+            st.consecutive_tel_losses++;
+            if (st.consecutive_tel_losses >= 2 && st.is_online) {
+                st.is_online = false;
                 RCLCPP_WARN(
                     this->get_logger(),
-                    "%s[RADIO] Robô %d sem resposta de telemetria (comandos continuam normal; telemetria sondada a 1 Hz).%s",
+                    "%s[RADIO] Robô %d sem resposta de telemetria (sondagem a 1 Hz).%s",
                     C_YELLOW.c_str(),
                     robot_id,
                     C_RESET.c_str());
@@ -1398,26 +1098,19 @@ void Nrf24HardwareBridge::tx_timer_callback()
     }
 }
 
-bool Nrf24HardwareBridge::transmit_command(const struct RobotCommand& cmd)
+bool Nrf24HardwareBridge::transmit_command(
+    const struct RobotCommand& cmd, struct BaseRfTxStatus* out_status)
 {
-    return send_robot_command_packet(serial_fd_, cmd, get_active_guard_us());
+    return send_robot_command(base_client_, cmd, out_status);
 }
 
 bool Nrf24HardwareBridge::request_and_receive_telemetry(uint8_t robot_id)
 {
-    struct RobotTelemetry telemetry = {};
+    struct RobotTelemetry tel = {};
     double rtt_ms = 0.0;
-
     if (send_telemetry_request_and_wait(
-            serial_fd_, robot_id, &telemetry, &rtt_ms, TELEMETRY_TIMEOUT_MS)) {
-        publish_telemetry(telemetry);
-        RCLCPP_DEBUG(
-            this->get_logger(),
-            "✓ [TEL] Robô %d | RTT: %.1fms | Bateria: %d%% | Kicker: %.2fV",
-            telemetry.header.robot_id,
-            rtt_ms,
-            telemetry.battery_percentage,
-            telemetry.kicker_voltage / 100.0);
+            base_client_, robot_id, &tel, &rtt_ms, nullptr, TELEMETRY_TIMEOUT_MS)) {
+        publish_telemetry(tel);
         return true;
     }
     return false;
@@ -1426,130 +1119,19 @@ bool Nrf24HardwareBridge::request_and_receive_telemetry(uint8_t robot_id)
 void Nrf24HardwareBridge::publish_telemetry(const struct RobotTelemetry& telemetry_bp)
 {
     oxebots_interfaces::msg::RobotTelemetry msg;
-
     msg.timestamp = telemetry_bp.header.timestamp;
     msg.robot_id = telemetry_bp.header.robot_id;
-
     msg.x = static_cast<float>(telemetry_bp.robot_pose.x);
     msg.y = static_cast<float>(telemetry_bp.robot_pose.y);
     msg.orientation = static_cast<float>(telemetry_bp.robot_pose.angle / 100.0);
     msg.vx = static_cast<float>(telemetry_bp.robot_pose.x_v);
     msg.vy = static_cast<float>(telemetry_bp.robot_pose.y_v);
     msg.w = static_cast<float>(telemetry_bp.robot_pose.angular_vel / 100.0);
-
     msg.battery_percentage = telemetry_bp.battery_percentage;
     msg.kicker_voltage = static_cast<float>(telemetry_bp.kicker_voltage / 100.0);
     msg.error_flags = telemetry_bp.error_flags;
-
     telemetry_pub_->publish(msg);
 }
-
-bool Nrf24HardwareBridge::open_serial_port(const std::string& port_name)
-{
-    serial_fd_ = open(port_name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
-    if (serial_fd_ < 0) {
-        return false;
-    }
-
-    fcntl(serial_fd_, F_SETFL, 0);
-
-    struct termios tty;
-    if (tcgetattr(serial_fd_, &tty) != 0) {
-        return false;
-    }
-
-    cfsetospeed(&tty, B115200);
-    cfsetispeed(&tty, B115200);
-
-    tty.c_cflag &= ~PARENB;
-    tty.c_cflag &= ~CSTOPB;
-    tty.c_cflag &= ~CSIZE;
-    tty.c_cflag |= CS8;
-    tty.c_cflag &= ~CRTSCTS;
-    tty.c_cflag |= CREAD | CLOCAL;
-
-    tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-    tty.c_iflag &= ~(IXON | IXOFF | IXANY);
-    tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL);
-    tty.c_oflag &= ~OPOST;
-
-    tty.c_cc[VMIN] = 0;
-    tty.c_cc[VTIME] = 0;
-
-    if (tcsetattr(serial_fd_, TCSANOW, &tty) != 0) {
-        return false;
-    }
-
-    struct serial_struct ser_info;
-    if (ioctl(serial_fd_, TIOCGSERIAL, &ser_info) == 0) {
-        ser_info.flags |= ASYNC_LOW_LATENCY;
-        ioctl(serial_fd_, TIOCSSERIAL, &ser_info);
-    }
-
-    tcflush(serial_fd_, TCIOFLUSH);
-    return true;
-}
-
-void Nrf24HardwareBridge::configure_nrf24()
-{
-    RCLCPP_INFO(this->get_logger(), "Configurando módulo USB nRF24L01 via comandos AT...");
-
-    std::string rx_addr = g_override_rx_addr.empty()
-                              ? this->get_parameter("radio_rx_address").as_string()
-                              : g_override_rx_addr;
-    std::string tx_addr = g_override_tx_addr.empty()
-                              ? this->get_parameter("radio_tx_address").as_string()
-                              : g_override_tx_addr;
-    double freq = (g_override_freq > 0.0) ? g_override_freq
-                                          : this->get_parameter("radio_frequency").as_double();
-    int rate =
-        (g_override_rate > 0) ? g_override_rate : this->get_parameter("radio_rate").as_int();
-
-    if (rx_addr.length() != 5 || tx_addr.length() != 5) {
-        RCLCPP_ERROR(
-            this->get_logger(), "Endereços RX e TX devem conter exatamente 5 caracteres.");
-        return;
-    }
-
-    auto format_address = [](const std::string& addr) {
-        std::ostringstream oss;
-        for (size_t i = 0; i < addr.length(); ++i) {
-            oss << "0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0')
-                << static_cast<int>(static_cast<uint8_t>(addr[i]));
-            if (i < addr.length() - 1) oss << ",";
-        }
-        return oss.str();
-    };
-
-    char freq_cmd[32];
-    std::snprintf(freq_cmd, sizeof(freq_cmd), "AT+FREQ=%.3f", freq);
-    std::string rxa_cmd = "AT+RXA=" + format_address(rx_addr);
-    std::string txa_cmd = "AT+TXA=" + format_address(tx_addr);
-    std::string rate_cmd = "AT+RATE=" + std::to_string(rate);
-
-    send_at_and_translate(serial_fd_, "AT+BAUD=7", 400);
-    usleep(100000);
-    send_at_and_translate(serial_fd_, rxa_cmd, 500);
-    usleep(100000);
-    send_at_and_translate(serial_fd_, txa_cmd, 500);
-    usleep(100000);
-    send_at_and_translate(serial_fd_, freq_cmd, 400);
-    usleep(100000);
-    send_at_and_translate(serial_fd_, rate_cmd, 400);
-
-    // Aguarda estabilização do MCU STC15 do dongle antes de iniciar envio de pacotes binários
-    usleep(250000);
-    tcflush(serial_fd_, TCIOFLUSH);
-    RCLCPP_INFO(
-        this->get_logger(),
-        "Configuração AT concluída (Freq: %.3f GHz | Rate: %d | RX: %s | TX: %s).",
-        freq,
-        rate,
-        rx_addr.c_str(),
-        tx_addr.c_str());
-}
-
-// 8. PONTO DE ENTRADA (MODO ROS 2, CLI INTERATIVO, BENCHMARK E ONE-SHOT)
 
 int main(int argc, char* argv[])
 {
@@ -1557,26 +1139,27 @@ int main(int argc, char* argv[])
 
     bool cli_mode = false;
     bool benchmark_mode = false;
-    std::string bench_target_spec = "3";
+    bool scan_mode = false;
+    std::string bench_spec = "3";
     double bench_duration = 10.0;
     int bench_tel_interval = 5;
 
-    bool one_shot_config = false;
-    uint8_t oneshot_robot_id = 0;
+    bool oneshot_config = false;
+    uint8_t oneshot_id = 0;
     uint8_t oneshot_flags = 0;
     uint16_t oneshot_param = 0;
 
     try {
         for (size_t i = 1; i < args.size(); ++i) {
             const std::string& arg = args[i];
-            if (arg == "--safe_ack" || arg == "--safe-ack") {
-                g_safe_ack_mode = true;
-            } else if (arg == "--cli" || arg == "--config") {
+            if (arg == "--cli" || arg == "--config") {
                 cli_mode = true;
+            } else if (arg == "--scan") {
+                scan_mode = true;
             } else if (arg == "--benchmark" || arg == "--bench") {
                 benchmark_mode = true;
                 if (i + 1 < args.size() && !args[i + 1].empty() && args[i + 1][0] != '-') {
-                    bench_target_spec = args[++i];
+                    bench_spec = args[++i];
                 }
                 if (i + 1 < args.size() && !args[i + 1].empty() && args[i + 1][0] != '-') {
                     bench_duration = std::stod(args[++i]);
@@ -1584,88 +1167,75 @@ int main(int argc, char* argv[])
                 if (i + 1 < args.size() && !args[i + 1].empty() && args[i + 1][0] != '-') {
                     bench_tel_interval = std::stoi(args[++i]);
                 }
-            } else if (arg == "--skip-config") {
-                g_skip_at_config = true;
-            } else if ((arg == "--freq" || arg == "-f") && i + 1 < args.size()) {
-                g_override_freq = std::stod(args[++i]);
+            } else if ((arg == "--port" || arg == "-p") && i + 1 < args.size()) {
+                g_override_port = args[++i];
+            } else if ((arg == "--baud" || arg == "-b") && i + 1 < args.size()) {
+                g_override_baud = std::stoi(args[++i]);
+            } else if ((arg == "--channel" || arg == "-c") && i + 1 < args.size()) {
+                g_override_channel = std::stoi(args[++i]);
             } else if ((arg == "--rate" || arg == "-r") && i + 1 < args.size()) {
                 g_override_rate = std::stoi(args[++i]);
-            } else if ((arg == "--address" || arg == "-a") && i + 1 < args.size()) {
-                g_override_tx_addr = args[++i];
+            } else if (arg == "--pa" && i + 1 < args.size()) {
+                g_override_pa = std::stoi(args[++i]);
+            } else if (arg == "--skip-config") {
+                g_skip_config = true;
             } else if (arg == "--set-id" && i + 2 < args.size()) {
-                one_shot_config = true;
-                oneshot_robot_id = parse_robot_id_token(args[++i]);
+                oneshot_config = true;
+                oneshot_id = parse_robot_id_token(args[++i]);
                 oneshot_flags = CONFIG_FLAG_SET_ID;
                 oneshot_param = static_cast<uint16_t>(std::stoi(args[++i]));
+            } else if (arg == "--set-channel" && i + 2 < args.size()) {
+                oneshot_config = true;
+                oneshot_id = parse_robot_id_token(args[++i]);
+                oneshot_flags = CONFIG_FLAG_SET_CHANNEL;
+                oneshot_param = static_cast<uint16_t>(std::stoi(args[++i]));
             } else if (arg == "--calibrate" && i + 1 < args.size()) {
-                one_shot_config = true;
-                oneshot_robot_id = parse_robot_id_token(args[++i]);
+                oneshot_config = true;
+                oneshot_id = parse_robot_id_token(args[++i]);
                 oneshot_flags = CONFIG_FLAG_RUN_CALIBRATION;
             } else if (arg == "--calibrate-mag" && i + 1 < args.size()) {
-                one_shot_config = true;
-                oneshot_robot_id = parse_robot_id_token(args[++i]);
+                oneshot_config = true;
+                oneshot_id = parse_robot_id_token(args[++i]);
                 oneshot_flags = CONFIG_FLAG_CALIBRATE_MAG;
             } else if (arg == "--reset-nvs" && i + 1 < args.size()) {
-                one_shot_config = true;
-                oneshot_robot_id = parse_robot_id_token(args[++i]);
+                oneshot_config = true;
+                oneshot_id = parse_robot_id_token(args[++i]);
                 oneshot_flags = CONFIG_FLAG_RESET_NVS;
             } else if (arg == "--factory-reset" && i + 1 < args.size()) {
-                one_shot_config = true;
-                oneshot_robot_id = parse_robot_id_token(args[++i]);
+                oneshot_config = true;
+                oneshot_id = parse_robot_id_token(args[++i]);
                 oneshot_flags = CONFIG_FLAG_FACTORY_RESET;
             } else if (arg == "--help" || arg == "-h") {
                 print_cli_help();
-                std::cout
-                    << "\nFlags de linha de comando para ros2 run oxebots_comms nrf24_bridge_node:\n"
-                    << "  --cli / --config                            Abre o terminal interativo CLI\n"
-                    << "  --benchmark [robos] [duracao_s] [tel_int]   Executa o benchmark de rádio (ex: --benchmark 3 10 5)\n"
-                    << "  --safe_ack / --safe-ack                     Usa guarda de 22ms entre pacotes\n"
-                    << "  --set-id <id|broadcast> <new_id>            Altera o ID do robô e encerra\n"
-                    << "  --calibrate <id|broadcast>                  Inicia calibração completa e encerra\n"
-                    << "  --calibrate-mag <id|broadcast>              Inicia calibração do magnetômetro e encerra\n"
-                    << "  --reset-nvs <id|broadcast>                  Reseta NVS do robô e encerra\n"
-                    << "  --factory-reset <id|broadcast>              Apaga toda a NVS do robô e encerra\n"
-                    << "  --freq <GHz>                                Define a frequência (padrão: 2.476)\n"
-                    << "  --rate <1|2|3>                              Define a taxa de dados (1=250k, 2=1M, 3=2M)\n"
-                    << "  --address <5_chars>                         Define o TX address (padrão: ESP32)\n"
-                    << "  --skip-config                               Pula o envio de comandos AT no início\n";
                 rclcpp::shutdown();
                 return 0;
             }
         }
-    } catch (const std::exception& e) {
-        std::cerr << "Argument Error : " << e.what() << std::endl;
-        rclcpp::shutdown();
-        return 1;
-    }
 
-    try {
-        const bool standalone_mode = (one_shot_config || benchmark_mode || cli_mode);
-        auto node = std::make_shared<Nrf24HardwareBridge>(!standalone_mode);
+        const bool ros_loop = (!cli_mode && !benchmark_mode && !oneshot_config && !scan_mode);
+        auto node = std::make_shared<Nrf24HardwareBridge>(ros_loop);
 
-        if (standalone_mode) {
-            if (g_active_serial_fd >= 0) {
-                if (one_shot_config) {
-                    send_robot_config_packet(
-                        g_active_serial_fd, oneshot_robot_id, oneshot_flags, oneshot_param);
-                }
-                if (benchmark_mode) {
-                    run_benchmark(
-                        g_active_serial_fd,
-                        bench_target_spec,
-                        bench_duration,
-                        bench_tel_interval,
-                        get_active_guard_us());
-                }
-                if (cli_mode) {
-                    run_interactive_cli(g_active_serial_fd);
-                }
+        if (oneshot_config) {
+            struct BaseRfTxStatus st = {};
+            send_robot_config(node->base_client(), oneshot_id, oneshot_flags, oneshot_param, &st);
+            std::cout << "Config enviado: status=" << static_cast<int>(st.status)
+                      << " retries=" << static_cast<int>(st.retries) << std::endl;
+        } else if (scan_mode) {
+            struct BaseScanResult scan = {};
+            if (node->base_client().scan_spectrum(0, 125, 32, &scan)) {
+                print_scan_result(scan);
             }
+        } else if (benchmark_mode) {
+            run_benchmark(node->base_client(), bench_spec, bench_duration, bench_tel_interval);
+        } else if (cli_mode) {
+            run_interactive_cli(node->base_client());
         } else {
             rclcpp::spin(node);
         }
     } catch (const std::exception& e) {
-        std::cerr << "Fatal Error : " << e.what() << std::endl;
+        std::cerr << C_RED << "Erro fatal: " << e.what() << C_RESET << std::endl;
+        rclcpp::shutdown();
+        return 1;
     }
 
     rclcpp::shutdown();

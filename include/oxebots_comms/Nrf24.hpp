@@ -2,7 +2,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <iostream>
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -10,6 +9,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/u_int8.hpp>
+#include "oxebots_comms/base_station_client.hpp"
+#include "oxebots_interfaces/base_station_protocol_bp.h"
 #include "oxebots_interfaces/msg/game_data.hpp"
 #include "oxebots_interfaces/msg/robot_cmd.hpp"
 #include "oxebots_interfaces/msg/robot_kinematic_pose.hpp"
@@ -18,29 +19,14 @@
 #include "oxebots_interfaces/ssl_robot_protocol_bp.h"
 
 /**
- * @brief acha automaticamente a porta serial (ex: /dev/ttyUSB0) do dongle USB
- *        pelo Vendor ID (VID) e Product ID (PID) do conversor CH340 (1a86:7523).
- */
-std::string Find_Nrf24_port(uint16_t port_pid, uint16_t port_vid);
-
-/**
- * @brief Nó ROS 2 responsável pela ponte de comunicação via rádio nRF24L01 com os robôs.
+ * @brief Nó ROS 2 ponte entre o software de alto nível e a ESP32 Base Station (UART0 COBS+CRC8).
  *
- * Arquitetura de Comunicação (Protocolo Bitproto):
- * - RobotCommand (30 bytes, MSG_TYPE_COMMAND = 0):
- *     Enviado continuamente (fire-and-forget, sem resposta de telemetria).
- *     Sincronizado na UART aguardando os 6 bytes de status (02 00 00 00 00 00) emitidos
- *     pelo microcontrolador STC15 do dongle USB ao concluir a transmissão RF (~12.5ms).
- * - RobotTelemetryRequest (5 bytes, MSG_TYPE_TELEMETRY_REQ = 3):
- *     Enviado explicitamente a cada N comandos por robô (configurável via parâmetro
- *     `telemetry_request_interval` no `match_config.yaml`), escalonado entre os robôs
- *     para que no máximo um robô responda telemetria por ciclo.
- * - RobotTelemetry (22 bytes, MSG_TYPE_TELEMETRY = 2):
- *     Resposta enviada pela ESP32 do robô exclusivamente quando recebe um RobotTelemetryRequest.
- * - Sondagem de Robôs Offline (Hot-Plug 1 Hz):
- *     Se um robô falhar em responder telemetria consecutivamente, ele continua recebendo
- *     RobotCommand normalmente na frequência máxima, mas seus pedidos de telemetria passam
- *     a ser feitos a 1 Hz até que ele seja ligado/volte a responder.
+ * Arquitetura de Comunicação:
+ * - PC <-> ESP32 Base Station: 921600 baud, COBS(msg_type | bitproto | crc8) + 0x00.
+ * - Base Station <-> Robôs: nRF24L01+ 2 Mbps, endereço exclusivo por robô com Auto-ACK em
+ *   hardware (Pipe 1) + Pipe 2 broadcast NO_ACK para comandos globais/emergência.
+ * - Agilidade de Canal: suporta varredura de espectro RPD (0..125) e migração coordenada de
+ *   canal via CONFIG_FLAG_SET_CHANNEL (robôs) + BS_MSG_SET_CONFIG (Base).
  */
 class Nrf24HardwareBridge : public rclcpp::Node
 {
@@ -48,41 +34,34 @@ public:
     explicit Nrf24HardwareBridge(bool enable_ros_loop = true);
     ~Nrf24HardwareBridge() override;
 
+    oxebots_comms::BaseStationClient& base_client() { return base_client_; }
+
 private:
-    /**
-     * @brief Armazena o último comando recebido do ROS 2 para um determinado robô,
-     *        permitindo desacoplar a taxa dos tópicos ROS da escrita na porta serial.
-     */
     struct PendingRobotCommand
     {
         struct RobotCommand cmd = {};
-        struct SingleRobotVelCmd vel_cmd = {};
         std::chrono::steady_clock::time_point updated_at{};
         bool pending = false;
     };
 
-    /**
-     * @brief Rastreia o agendamento de requisições de telemetria e o estado online/offline
-     *        de cada robô individualmente.
-     */
-    struct RobotTelemetryState
+    struct RobotLinkState
     {
         int cmd_since_last_tel = 0;
-        int consecutive_losses = 0;
+        int consecutive_tx_fails = 0;
+        int consecutive_tel_losses = 0;
         bool is_online = true;
         std::chrono::steady_clock::time_point last_tel_attempt{};
     };
 
-    int serial_fd_ = -1;
+    oxebots_comms::BaseStationClient base_client_;
     int telemetry_request_interval_ = 5;
-    bool use_team_vel_cmd_ = true;
+    double max_kick_speed_ = 3.0;
 
     std::map<uint8_t, PendingRobotCommand> pending_commands_;
     std::vector<uint8_t> pending_calibrations_;
-    std::unordered_map<uint8_t, RobotTelemetryState> telemetry_states_;
+    std::unordered_map<uint8_t, RobotLinkState> link_states_;
     std::unordered_map<uint8_t, double> robot_orientations_;
 
-    // Callbacks de subscrição e timer do ROS 2
     void send_command(const oxebots_interfaces::msg::RobotCmd::SharedPtr msg);
     void send_trajectory_setpoint(
         const oxebots_interfaces::msg::RobotTrajectorySetpoint::SharedPtr msg);
@@ -90,16 +69,13 @@ private:
     void calibrate_robot_callback(const std_msgs::msg::UInt8::SharedPtr msg);
     void tx_timer_callback();
 
-    // Métodos internos de rádio, serialização Bitproto e configuração AT
-    bool transmit_command(const struct RobotCommand& cmd);
+    void configure_base_station();
+    bool transmit_command(const struct RobotCommand& cmd, struct BaseRfTxStatus* out_status);
     bool request_and_receive_telemetry(uint8_t robot_id);
     void publish_telemetry(const struct RobotTelemetry& telemetry_bp);
-    void configure_nrf24();
-    bool open_serial_port(const std::string& port_name);
     struct Pose kinematic_pose_to_bitproto(
         const oxebots_interfaces::msg::RobotKinematicPose& msg);
 
-    // Interfaces ROS 2
     rclcpp::Publisher<oxebots_interfaces::msg::RobotTelemetry>::SharedPtr telemetry_pub_;
     rclcpp::Subscription<oxebots_interfaces::msg::RobotCmd>::SharedPtr command_sub_;
     rclcpp::Subscription<oxebots_interfaces::msg::RobotTrajectorySetpoint>::SharedPtr

@@ -66,6 +66,7 @@ endforeach()
 
 add_executable(nrf24_bridge_node
     src/Nrf24.cpp
+    src/base_station_client.cpp
 )
 
 ament_target_dependencies(nrf24_bridge_node ${REQUIRED_PACKAGES} ${REQUIRED_COMPONENTS})
@@ -100,6 +101,23 @@ if(BUILD_TESTING)
     )
     ament_target_dependencies(test_kinematics
         rclcpp
+    )
+
+    ament_add_gtest(test_kick_scaling
+        test/test_kick_scaling.cpp
+    )
+    target_include_directories(test_kick_scaling PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    )
+
+    ament_add_gtest(test_base_station_codec
+        test/test_base_station_codec.cpp
+    )
+    ament_target_dependencies(test_base_station_codec
+        oxebots_interfaces
+    )
+    target_include_directories(test_base_station_codec PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     )
 
     find_package(ament_lint_auto REQUIRED)
