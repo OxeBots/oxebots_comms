@@ -405,12 +405,8 @@ bool BaseStationClient::set_config(
     return false;
 }
 
-bool BaseStationClient::scan_spectrum(
-    uint8_t start_channel,
-    uint8_t end_channel,
-    uint8_t samples_per_channel,
-    struct BaseScanResult* out_result,
-    int timeout_ms)
+bool BaseStationClient::start_scan_spectrum(
+    uint8_t start_channel, uint8_t end_channel, uint8_t samples_per_channel)
 {
     scan_queue_.clear();
     struct BaseScanRequest req = {};
@@ -419,15 +415,36 @@ bool BaseStationClient::scan_spectrum(
     req.samples_per_channel = samples_per_channel;
     uint8_t raw[BYTES_LENGTH_BASE_SCAN_REQUEST] = {};
     EncodeBaseScanRequest(&req, raw);
-    if (!write_frame(BS_MSG_SCAN_REQ, raw, sizeof(raw))) {
+    return write_frame(BS_MSG_SCAN_REQ, raw, sizeof(raw));
+}
+
+bool BaseStationClient::pop_scan_result(struct BaseScanResult* out_result)
+{
+    if (scan_queue_.empty()) return false;
+    if (out_result != nullptr) *out_result = scan_queue_.front();
+    scan_queue_.pop_front();
+    return true;
+}
+
+void BaseStationClient::poll_available(int timeout_ms)
+{
+    poll_once(timeout_ms);
+}
+
+bool BaseStationClient::scan_spectrum(
+    uint8_t start_channel,
+    uint8_t end_channel,
+    uint8_t samples_per_channel,
+    struct BaseScanResult* out_result,
+    int timeout_ms)
+{
+    if (!start_scan_spectrum(start_channel, end_channel, samples_per_channel)) {
         return false;
     }
 
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
     while (std::chrono::steady_clock::now() < deadline) {
-        if (!scan_queue_.empty()) {
-            if (out_result != nullptr) *out_result = scan_queue_.front();
-            scan_queue_.pop_front();
+        if (pop_scan_result(out_result)) {
             return true;
         }
         const int rem = static_cast<int>(
@@ -437,7 +454,7 @@ bool BaseStationClient::scan_spectrum(
         if (rem <= 0) break;
         poll_once(rem);
     }
-    return false;
+    return pop_scan_result(out_result);
 }
 
 bool BaseStationClient::send_rf_packet(
@@ -461,6 +478,52 @@ bool BaseStationClient::send_rf_packet(
     uint8_t raw[BYTES_LENGTH_BASE_RF_TX] = {};
     EncodeBaseRfTx(&req, raw);
     if (!write_frame(BS_MSG_RF_TX, raw, sizeof(raw))) {
+        return false;
+    }
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
+    while (std::chrono::steady_clock::now() < deadline) {
+        while (!tx_status_queue_.empty()) {
+            const struct BaseRfTxStatus st = tx_status_queue_.front();
+            tx_status_queue_.pop_front();
+            if (st.seq == seq) {
+                if (out_status != nullptr) *out_status = st;
+                return true;
+            }
+        }
+        const int rem = static_cast<int>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                deadline - std::chrono::steady_clock::now())
+                .count());
+        if (rem <= 0) break;
+        poll_once(rem);
+    }
+    return false;
+}
+
+bool BaseStationClient::send_rf_packet_on_channel(
+    uint8_t target_robot_id,
+    uint8_t rf_channel,
+    const uint8_t* payload,
+    uint8_t len,
+    uint8_t tx_flags,
+    struct BaseRfTxStatus* out_status,
+    int timeout_ms)
+{
+    if (payload == nullptr || len == 0 || len > 31 || rf_channel > 125) return false;
+
+    const uint16_t seq = next_seq_++;
+    struct BaseRfTxOnChannel req = {};
+    req.seq = seq;
+    req.target_robot_id = target_robot_id;
+    req.tx_flags = tx_flags;
+    req.rf_channel = rf_channel;
+    req.payload_len = len;
+    std::memcpy(req.payload, payload, len);
+
+    uint8_t raw[BYTES_LENGTH_BASE_RF_TX_ON_CHANNEL] = {};
+    EncodeBaseRfTxOnChannel(&req, raw);
+    if (!write_frame(BS_MSG_RF_TX_CH, raw, sizeof(raw))) {
         return false;
     }
 

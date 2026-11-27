@@ -46,9 +46,25 @@ public:
         struct BaseScanResult* out_result,
         int timeout_ms = 5000);
 
+    // Non-blocking async scan support (Dual-Radio RX background sweep without stalling TX).
+    bool start_scan_spectrum(
+        uint8_t start_channel, uint8_t end_channel, uint8_t samples_per_channel);
+    bool pop_scan_result(struct BaseScanResult* out_result);
+    void poll_available(int timeout_ms = 0);
+
     // Send one RF frame via Base Station and wait for hardware TX status (BS_MSG_RF_TX_STATUS).
     bool send_rf_packet(
         uint8_t target_robot_id,
+        const uint8_t* payload,
+        uint8_t len,
+        uint8_t tx_flags,
+        struct BaseRfTxStatus* out_status = nullptr,
+        int timeout_ms = 50);
+
+    // Send one RF frame on a temporary channel (BS_MSG_RF_TX_CH) without changing active channel.
+    bool send_rf_packet_on_channel(
+        uint8_t target_robot_id,
+        uint8_t rf_channel,
         const uint8_t* payload,
         uint8_t len,
         uint8_t tx_flags,

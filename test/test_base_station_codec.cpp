@@ -44,6 +44,40 @@ TEST(BaseStationCodecTest, RoundTripWithEmbeddedZeros)
     EXPECT_EQ(std::memcmp(out.payload, tx.payload, 31), 0);
 }
 
+TEST(BaseStationCodecTest, RoundTripRfTxOnChannel)
+{
+    struct BaseRfTxOnChannel tx = {};
+    tx.seq = 77;
+    tx.target_robot_id = 1;
+    tx.tx_flags = 0;
+    tx.rf_channel = 76;
+    tx.payload_len = 8;
+    tx.payload[0] = 0x11;
+    tx.payload[7] = 0x55;
+
+    uint8_t raw[BYTES_LENGTH_BASE_RF_TX_ON_CHANNEL] = {};
+    EncodeBaseRfTxOnChannel(&tx, raw);
+    const auto frame = oxebots_comms::encode_base_frame(BS_MSG_RF_TX_CH, raw, sizeof(raw));
+    ASSERT_FALSE(frame.empty());
+
+    oxebots_comms::BaseFrameDecoder decoder;
+    std::vector<oxebots_comms::DecodedBaseFrame> decoded_frames;
+    decoder.feed(frame.data(), frame.size(), [&](const oxebots_comms::DecodedBaseFrame& f) {
+        decoded_frames.push_back(f);
+    });
+
+    ASSERT_EQ(decoded_frames.size(), 1U);
+    EXPECT_EQ(decoded_frames[0].msg_type, BS_MSG_RF_TX_CH);
+    ASSERT_EQ(decoded_frames[0].payload.size(), BYTES_LENGTH_BASE_RF_TX_ON_CHANNEL);
+
+    struct BaseRfTxOnChannel out = {};
+    DecodeBaseRfTxOnChannel(&out, decoded_frames[0].payload.data());
+    EXPECT_EQ(out.seq, 77U);
+    EXPECT_EQ(out.rf_channel, 76U);
+    EXPECT_EQ(out.payload_len, 8U);
+    EXPECT_EQ(std::memcmp(out.payload, tx.payload, 31), 0);
+}
+
 TEST(BaseStationCodecTest, RejectsCorruptedCrcAndResyncs)
 {
     struct BasePing ping = {};
@@ -67,12 +101,13 @@ TEST(BaseStationCodecTest, RejectsCorruptedCrcAndResyncs)
     EXPECT_EQ(count, 1);
 }
 
-TEST(BaseStationCodecTest, ScanResultFull129ByteRoundTrip)
+TEST(BaseStationCodecTest, ScanResultFull130ByteRoundTrip)
 {
     struct BaseScanResult scan = {};
     scan.start_channel = 0;
     scan.count = 126;
-    scan.best_channel = 114;
+    scan.best_channel = 104;
+    scan.best_rx_channel = 118;
     for (int i = 0; i < 126; ++i) {
         scan.busy_pct[i] = static_cast<uint8_t>(i % 101);
     }
@@ -94,6 +129,7 @@ TEST(BaseStationCodecTest, ScanResultFull129ByteRoundTrip)
     DecodeBaseScanResult(&out, frames[0].payload.data());
     EXPECT_EQ(out.start_channel, 0U);
     EXPECT_EQ(out.count, 126U);
-    EXPECT_EQ(out.best_channel, 114U);
+    EXPECT_EQ(out.best_channel, 104U);
+    EXPECT_EQ(out.best_rx_channel, 118U);
     EXPECT_EQ(std::memcmp(out.busy_pct, scan.busy_pct, 126), 0);
 }

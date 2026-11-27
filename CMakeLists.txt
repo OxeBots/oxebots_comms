@@ -77,7 +77,18 @@ target_include_directories(nrf24_bridge_node PUBLIC
     ${LIBSERIALPORT_INCLUDE_DIRS}
 )
 
-install(TARGETS nrf24_bridge_node DESTINATION lib/${PROJECT_NAME})
+add_executable(radio_channel_manager_node
+    src/radio_channel_manager_node.cpp
+)
+ament_target_dependencies(radio_channel_manager_node
+    oxebots_interfaces
+    rclcpp
+)
+target_include_directories(radio_channel_manager_node PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
+
+install(TARGETS nrf24_bridge_node radio_channel_manager_node DESTINATION lib/${PROJECT_NAME})
 
 install(PROGRAMS
         scripts/Adapt.py
@@ -117,6 +128,20 @@ if(BUILD_TESTING)
         oxebots_interfaces
     )
     target_include_directories(test_base_station_codec PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    )
+
+    ament_add_gtest(test_channel_migration
+        test/test_channel_migration.cpp
+    )
+    target_include_directories(test_channel_migration PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    )
+
+    ament_add_gtest(test_channel_policy
+        test/test_channel_policy.cpp
+    )
+    target_include_directories(test_channel_policy PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     )
 
